@@ -35,7 +35,10 @@ export default function Privacy() {
 
           <H>What we collect</H>
           <ul className="space-y-1">
-            <li>Your email address and password, used to sign you in and to send a link if you forget your password. Passwords are stored only as secure hashes by our sign-in provider.</li>
+            <li>
+              Your email address and password, used to sign you in and to send a link if you forget your
+              password. Passwords are stored only as secure hashes by our sign-in provider.
+            </li>
             <li>
               Your onboarding answers: your track, what brought you here, what you need most, and an optional
               display name.
