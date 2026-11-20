@@ -8,7 +8,7 @@ const day = (i: number, over: Partial<WeekDay> = {}): WeekDay => ({
   intensity: null,
   temptation: null,
   stress: null,
-  emotion: null,
+  emotions: [],
   hasData: false,
   ...over,
 })
@@ -60,13 +60,25 @@ describe('mostFrequentEmotion', () => {
     expect(mostFrequentEmotion([day(0), day(1)])).toBeNull()
   })
 
-  it('returns the most common emotion', () => {
-    const days = ['Anxious', 'Hopeful', 'Anxious'].map((e, i) => day(i, { emotion: e, hasData: true }))
-    expect(mostFrequentEmotion(days)).toBe('Anxious')
+  it('counts every emotion selected each day', () => {
+    const days = [
+      day(0, { emotions: ['Anxious', 'Lonely'], hasData: true }),
+      day(1, { emotions: ['Hopeful', 'Lonely'], hasData: true }),
+      day(2, { emotions: ['Anxious', 'Lonely'], hasData: true }),
+    ]
+    expect(mostFrequentEmotion(days)).toBe('Lonely')
+  })
+
+  it('includes words typed in and ignores case', () => {
+    const days = [
+      day(0, { emotions: ['worn out'], hasData: true }),
+      day(1, { emotions: ['Worn out', 'Hopeful'], hasData: true }),
+    ]
+    expect(mostFrequentEmotion(days)?.toLowerCase()).toBe('worn out')
   })
 
   it('breaks ties in favor of the most recent day', () => {
-    const days = ['Anxious', 'Hopeful'].map((e, i) => day(i, { emotion: e, hasData: true }))
+    const days = ['Anxious', 'Hopeful'].map((e, i) => day(i, { emotions: [e], hasData: true }))
     expect(mostFrequentEmotion(days)).toBe('Hopeful')
   })
 })

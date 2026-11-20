@@ -9,6 +9,7 @@ import { RootLayout, TabsLayout } from './AppShell'
 import { legacyRedirects, paths } from './routes'
 
 const SignIn = lazy(() => import('@/pages/SignIn'))
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
 const Onboarding = lazy(() => import('@/pages/Onboarding'))
 const Home = lazy(() => import('@/pages/Home'))
 const CheckIn = lazy(() => import('@/pages/CheckIn'))
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Navigate to={paths.home} replace /> },
       { path: paths.signIn, element: <SignIn /> },
+      { path: paths.resetPassword, element: <ResetPassword /> },
       { path: paths.privacy, element: <Privacy /> },
       { path: paths.welcome, element: <Onboarding /> },
       {

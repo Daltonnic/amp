@@ -143,7 +143,7 @@ const ENTITIES = [
     map: (r) => ({
       track: track(r.track),
       date: str(r.date).slice(0, 10) || date(r.created_date).slice(0, 10),
-      emotional_state: str(r.emotional_state, 80),
+      emotions: str(r.emotional_state, 80) ? [str(r.emotional_state, 80)] : [],
       custom_emotion: str(r.custom_emotion, 200),
       intensity: track(r.track) === 'spouse' ? int(r.intensity) : null,
       temptation_level: track(r.track) === 'men' ? int(r.temptation_level) : null,

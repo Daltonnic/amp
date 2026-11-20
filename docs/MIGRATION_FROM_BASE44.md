@@ -15,9 +15,9 @@ Everything in the Base44 app's code has been rebuilt here. Three things live onl
 | `GroundingSession`                        | `grounding_sessions`                                                                              |
 | `AccountabilityContact`                   | `accountability_contacts`                                                                         |
 | `LibraryArticle`                          | `library_articles`                                                                                |
-| `integrations.Core.SendEmail`             | `send-support-email` Edge Function (Resend)                                                       |
+| `integrations.Core.SendEmail`             | Pre-written text / email sent from the person's own phone                                         |
 | Agent `grounding_guide`                   | `grounding-guide` Edge Function (Claude)                                                          |
-| Base44 login (hosted page)                | Supabase Auth, email codes                                                                        |
+| Base44 login (hosted page)                | Supabase Auth, email + password                                                                   |
 | `/Home`, `/CheckIn`, `/TriggerAwareness`… | `/home`, `/check-in`, `/triggers`… (old links redirect)                                           |
 
 ## 1. Export from Base44
@@ -63,7 +63,7 @@ The service-role key bypasses all security rules. Use it only in your terminal, 
 
 ## 3. Tell your users
 
-Because sign-in uses emailed codes, existing users don't need a new password: they open the new app, enter the **same email** they used on Base44, type the code, and their history is there.
+Imported accounts have no password yet. People tap **Forgot password?** on the sign-in screen, enter the **same email** they used on Base44, set a password from the emailed link, and their history is there. (Connect an email sender first — see SUPABASE_SETUP.md step 3.)
 
 ## 4. Grounding Guide instructions (optional)
 

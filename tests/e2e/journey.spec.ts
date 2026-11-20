@@ -1,5 +1,15 @@
 import { expect, test, type Page } from '@playwright/test'
 
+/** Records links the app opens in Messages / Mail instead of navigating away. */
+async function captureExternalLinks(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as Window & { __ampOpened?: string[]; __ampOpenExternal?: (url: string) => void }
+    w.__ampOpened = []
+    w.__ampOpenExternal = (url) => w.__ampOpened!.push(url)
+  })
+  return () => page.evaluate(() => (window as Window & { __ampOpened?: string[] }).__ampOpened ?? [])
+}
+
 /** Fails the test on any uncaught error or console error. */
 function watchErrors(page: Page) {
   const errors: string[] = []
@@ -54,7 +64,7 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
   // Home
   await expect(page.getByText('Complete daily check-ins to see your emotional patterns here.')).toBeVisible()
   await expect(page.getByText("Today's Focus")).toBeVisible()
-  await expect(page.getByRole('link', { name: /Add an accountability contact/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Add a trusted contact's mobile number/ })).toBeVisible()
 
   // Daily check-in (6 steps). A custom emotion alone is enough to continue.
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Check-In' }).click()
@@ -63,7 +73,19 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
   await expect(next).toBeDisabled()
   await page.getByRole('textbox', { name: /own words/ }).fill('Tired but hopeful')
   await expect(next).toBeEnabled()
-  await page.getByRole('button', { name: 'Hopeful', exact: true }).click()
+  // Several feelings can be selected, and tapping one again deselects it.
+  for (const feeling of ['Hopeful', 'Anxious', 'Grateful', 'Restless']) {
+    await page.getByRole('button', { name: feeling, exact: true }).click()
+  }
+  await page.getByRole('button', { name: 'Restless', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Restless', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await expect(page.getByRole('button', { name: 'Grateful', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   await next.click()
   await expect(page.getByText('Temptation level')).toBeVisible()
   await next.click()
@@ -77,7 +99,7 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
   await page.getByRole('button', { name: 'Complete' }).click()
   await expect(page).toHaveURL(/\/home$/)
   await expect(page.getByText("Today's check-in complete")).toBeVisible()
-  await expect(page.getByText('Feeling: Hopeful')).toBeVisible()
+  await expect(page.getByText('Feeling: Hopeful, Anxious, Grateful, Tired but hopeful')).toBeVisible()
   await expect(page.getByText('1/7 days logged')).toBeVisible()
   await expect(page.getByText('Most frequent emotion this week:')).toBeVisible()
 
@@ -88,6 +110,8 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   })
   expect(stored[0].date).toBe(localToday)
+  expect(stored[0].emotions).toEqual(['Hopeful', 'Anxious', 'Grateful'])
+  expect(stored[0].custom_emotion).toBe('Tired but hopeful')
   expect(stored[0].intensity).toBeNull()
   expect(stored[0].temptation_level).toBe(3)
 
@@ -237,24 +261,50 @@ test('spouse: track-specific content, resources, identity, library, accountabili
   await expect(page.getByRole('heading', { name: 'Walking in the Light' })).toBeVisible()
   await expect(page.getByText('Second paragraph.')).toBeVisible()
 
-  // Accountability: add + remove a contact; Home shows the one-tap support button.
+  // Accountability: add + remove a contact; support opens a ready-to-send text.
+  const openedLinks = await captureExternalLinks(page)
+  await page.reload()
   await page.getByRole('button', { name: 'More sections' }).click()
   await page.getByRole('link', { name: 'Accountability' }).click()
   await page.getByRole('button', { name: 'Add' }).click()
   const dialog = page.getByRole('dialog', { name: 'Add Trusted Contact' })
   await dialog.getByLabel('Name').fill('Sister Ruth')
-  await dialog.getByLabel('Email').fill('not-an-email')
+  // A way to reach them (mobile or email) is required.
+  await expect(dialog.getByRole('button', { name: 'Add Contact' })).toBeDisabled()
+  await dialog.getByLabel('Email (optional)').fill('not-an-email')
   await expect(dialog.getByText('Enter a valid email address.')).toBeVisible()
-  await dialog.getByLabel('Email').fill('ruth@example.com')
-  await dialog.getByLabel('Phone (optional)').fill('555-0100')
+  await dialog.getByLabel('Email (optional)').fill('ruth@example.com')
+  await dialog.getByLabel('Mobile number').fill('(555) 010-0100')
   await dialog.getByLabel('Relationship').fill('Mentor')
   await dialog.getByRole('button', { name: 'Add Contact' }).click()
   await expect(page.getByText('Sister Ruth')).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Call Sister Ruth' })).toHaveAttribute('href', 'tel:555-0100')
+  await expect(page.getByRole('link', { name: 'Call Sister Ruth' })).toHaveAttribute('href', 'tel:5550100100')
+  await page.getByRole('button', { name: 'Request Check-In' }).click()
+  const checkInLink = (await openedLinks()).at(-1) ?? ''
+  expect(checkInLink).toMatch(/^sms:5550100100[?&]body=/)
+  expect(decodeURIComponent(checkInLink)).toContain('Hi Sister, could you check in on me')
+
   await page.goto('/home')
-  await expect(page.getByRole('button', { name: /I Need Support/ })).toBeVisible()
-  await expect(page.getByText('Notify Sister Ruth (Mentor)')).toBeVisible()
+  await expect(page.getByText('Text Sister Ruth (Mentor)')).toBeVisible()
+  await page.getByRole('button', { name: /I Need Support/ }).click()
+  expect(decodeURIComponent((await openedLinks()).at(-1) ?? '')).toContain('I need support right now.')
+
+  // With two contacts, I Need Support asks who to reach.
   await page.goto('/accountability')
+  await page.getByRole('button', { name: 'Add' }).click()
+  await dialog.getByLabel('Name').fill('Pastor Dan')
+  await dialog.getByLabel('Email (optional)').fill('dan@example.com')
+  await dialog.getByRole('button', { name: 'Add Contact' }).click()
+  await expect(page.getByText('Pastor Dan')).toBeVisible()
+  await page.goto('/home')
+  await page.getByRole('button', { name: /I Need Support/ }).click()
+  const chooser = page.getByRole('dialog', { name: 'Who do you want to reach?' })
+  await chooser.getByRole('button', { name: /Pastor Dan/ }).click()
+  expect((await openedLinks()).at(-1)).toMatch(/^mailto:dan%40example\.com\?subject=I%20need%20support/)
+  await page.goto('/accountability')
+  await page.getByRole('button', { name: 'Remove Pastor Dan' }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Remove' }).click()
+  await expect(page.getByText('Pastor Dan')).toHaveCount(0)
   await page.getByRole('button', { name: 'Remove Sister Ruth' }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: 'Remove' }).click()
   await expect(page.getByText('No contacts yet. Add someone you trust.')).toBeVisible()

@@ -35,7 +35,7 @@ export default function Privacy() {
 
           <H>What we collect</H>
           <ul className="space-y-1">
-            <li>Your email address, used only to sign you in with a one-time code.</li>
+            <li>Your email address and password, used to sign you in and to send a link if you forget your password. Passwords are stored only as secure hashes by our sign-in provider.</li>
             <li>
               Your onboarding answers: your track, what brought you here, what you need most, and an optional
               display name.
@@ -64,10 +64,11 @@ export default function Privacy() {
           <H>When information leaves the app</H>
           <ul className="space-y-1">
             <li>
-              <strong>Emails to your accountability contacts.</strong> Only when you tap "I Need Support" or
-              "Request Check-In", we email that contact through our email provider (Resend). The message
-              includes your display name if you set one, and for "I Need Support", a one-line summary of
-              today's check-in. Replies go to your email address.
+              <strong>Messages to your accountability contacts.</strong> When you tap "I Need Support" or
+              "Request Check-In", AMP opens your phone's Messages app (or email app) with a message ready for
+              you to review and send. It is sent from your own phone number or email account; AMP never sends
+              it and keeps no copy. "I Need Support" includes a one-line summary of today's check-in, which
+              you can edit before sending.
             </li>
             <li>
               <strong>Grounding Guide (AI).</strong> If you start a Grounding Guide session, the trigger log

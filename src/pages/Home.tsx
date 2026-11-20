@@ -7,28 +7,29 @@ import {
   CircleCheck,
   ClipboardCheck,
   HandHeart,
-  LoaderCircle,
+  Mail,
+  MessageSquare,
   Minus,
   Shield,
   TrendingDown,
   TrendingUp,
   type LucideIcon,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { paths } from '@/app/routes'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { WeeklyChart, type ChartSeries } from '@/components/WeeklyChart'
 import { Card } from '@/components/ui/card'
+import { DialogDescription, DialogTitle, Sheet, SheetContent } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/controls'
 import { DAILY_FOCUS, ENCOURAGEMENTS } from '@/content/home'
 import { useContacts, useProfile, useTodayCheckIn, useWeekCheckIns } from '@/data/queries'
-import type { CheckIn, Track } from '@/data/types'
+import type { AccountabilityContact, CheckIn, Track } from '@/data/types'
 import { dailyPick, greeting } from '@/lib/dates'
 import { computeTrend, mostFrequentEmotion, type Trend } from '@/lib/insights'
-import { hapticSuccess } from '@/lib/native'
-import { contactSupport } from '@/lib/support'
-import { cn, errorMessage } from '@/lib/utils'
+import { hapticTap } from '@/lib/native'
+import { channelFor, reachOut } from '@/lib/support'
+import { cn } from '@/lib/utils'
 
 export default function Home() {
   const profile = useProfile()
@@ -65,7 +66,7 @@ export default function Home() {
         <InstallPrompt />
         <Encouragement track={track} />
         <QuickActions />
-        <SupportButton todayCheckIn={today.data ?? null} senderName={name} />
+        <SupportButton todayCheckIn={today.data ?? null} />
         <WeeklyInsights track={track} />
         <TodayCheckInCard checkIn={today.data ?? null} />
         <TodaysFocus track={track} />
@@ -121,79 +122,79 @@ function QuickActions() {
   )
 }
 
-function SupportButton({ todayCheckIn, senderName }: { todayCheckIn: CheckIn | null; senderName: string }) {
+function SupportButton({ todayCheckIn }: { todayCheckIn: CheckIn | null }) {
   const contacts = useContacts()
-  const [sending, setSending] = useState(false)
-  const [sent, setSent] = useState(false)
-  const contact = contacts.data?.find((c) => c.email) ?? contacts.data?.[0]
+  const [chooserOpen, setChooserOpen] = useState(false)
+  const reachable = (contacts.data ?? []).filter((c) => !c.id.startsWith('temp-') && channelFor(c))
 
-  if (!contact) {
+  if (reachable.length === 0) {
     return (
       <Link
         to={paths.accountability}
         className="flex items-center gap-3 rounded-xl border border-dashed bg-card p-4 text-sm text-muted-foreground transition-colors hover:bg-muted/40"
       >
         <HandHeart className="size-5 shrink-0 text-primary" aria-hidden="true" />
-        <span>Add an accountability contact to enable one-tap support</span>
+        <span>Add a trusted contact's mobile number to reach out in one tap</span>
       </Link>
     )
   }
 
-  const send = async () => {
-    if (!contact.email) {
-      toast.error('No email saved for this contact yet.', {
-        action: contact.phone
-          ? { label: 'Call', onClick: () => (window.location.href = `tel:${contact.phone}`) }
-          : undefined,
-      })
-      return
-    }
-    setSending(true)
-    try {
-      const result = await contactSupport({ contact, kind: 'support', checkIn: todayCheckIn, senderName })
-      if (result === 'sent') {
-        hapticSuccess()
-        setSent(true)
-        toast.success(`Message sent to ${contact.name}`)
-        setTimeout(() => setSent(false), 4000)
-      }
-    } catch (err) {
-      toast.error(errorMessage(err))
-    } finally {
-      setSending(false)
-    }
+  const send = (contact: AccountabilityContact) => {
+    hapticTap()
+    setChooserOpen(false)
+    reachOut(contact, 'support', todayCheckIn)
   }
+  const only = reachable.length === 1 ? reachable[0]! : null
+  const subtitle = only
+    ? `${channelFor(only) === 'text' ? 'Text' : 'Email'} ${only.name} (${only.relationship || 'contact'})`
+    : `Choose who to reach (${reachable.length} contacts)`
 
   return (
-    <button
-      type="button"
-      onClick={() => void send()}
-      disabled={sending || sent}
-      className={cn(
-        'flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-all active:scale-[0.98]',
-        sent
-          ? 'border-success/30 bg-success/10 text-success'
-          : 'border-primary/20 bg-primary/10 text-primary hover:bg-primary/15',
-      )}
-    >
-      {sending ? (
-        <LoaderCircle className="size-5 shrink-0 animate-spin" aria-hidden="true" />
-      ) : sent ? (
-        <CircleCheck className="size-5 shrink-0" aria-hidden="true" />
-      ) : (
+    <>
+      <button
+        type="button"
+        onClick={() => (only ? send(only) : setChooserOpen(true))}
+        className="flex w-full items-center gap-3 rounded-xl border border-primary/20 bg-primary/10 p-4 text-left text-primary transition-all hover:bg-primary/15 active:scale-[0.98]"
+      >
         <HandHeart className="size-5 shrink-0" aria-hidden="true" />
-      )}
-      <span>
-        <span className="block text-sm font-medium leading-tight">
-          {sent ? 'Support request sent' : 'I Need Support'}
+        <span>
+          <span className="block text-sm font-medium leading-tight">I Need Support</span>
+          <span className="mt-0.5 block text-xs opacity-75">{subtitle}</span>
         </span>
-        <span className="mt-0.5 block text-xs opacity-75">
-          {sent
-            ? `Notified ${contact.name}`
-            : `Notify ${contact.name} (${contact.relationship || 'contact'})`}
-        </span>
-      </span>
-    </button>
+      </button>
+      <Sheet open={chooserOpen} onOpenChange={setChooserOpen}>
+        <SheetContent>
+          <DialogTitle className="px-2 pt-2 text-base">Who do you want to reach?</DialogTitle>
+          <DialogDescription className="px-2 text-sm">
+            A message will open, ready for you to send.
+          </DialogDescription>
+          <ul className="space-y-1 py-3">
+            {reachable.map((c) => {
+              const text = channelFor(c) === 'text'
+              const Icon = text ? MessageSquare : Mail
+              return (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => send(c)}
+                    className="flex min-h-14 w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted"
+                  >
+                    <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium text-foreground">{c.name}</span>
+                      {c.relationship && (
+                        <span className="block text-xs text-muted-foreground">{c.relationship}</span>
+                      )}
+                    </span>
+                    <span className="text-xs font-medium text-primary">{text ? 'Text' : 'Email'}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
 
@@ -278,7 +279,9 @@ function WeeklyInsights({ track }: { track: Track }) {
 
 function TodayCheckInCard({ checkIn }: { checkIn: CheckIn | null }) {
   const done = Boolean(checkIn)
-  const feeling = checkIn?.emotional_state || checkIn?.custom_emotion
+  const feeling = checkIn
+    ? [...checkIn.emotions, checkIn.custom_emotion.trim()].filter(Boolean).join(', ')
+    : ''
   return (
     <Link to={paths.checkIn} className="block">
       <Card

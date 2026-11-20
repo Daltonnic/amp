@@ -1,7 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { ExternalLink, LogOut, Moon, RotateCcw, Shield, Smartphone, Sun, Trash2 } from 'lucide-react'
+import {
+  ExternalLink,
+  KeyRound,
+  LogOut,
+  Moon,
+  RotateCcw,
+  Shield,
+  Smartphone,
+  Sun,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { paths } from '@/app/routes'
 import { PageHeader, Screen } from '@/components/layout'
@@ -417,14 +427,24 @@ function AccountSection({ profileId }: { profileId: string }) {
       </AlertDialog>
 
       {isCloudConfigured && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full text-muted-foreground"
-          onClick={() => void signOut().then(() => navigate(paths.signIn, { replace: true }))}
-        >
-          <LogOut className="size-3.5" aria-hidden="true" /> Sign Out
-        </Button>
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-muted-foreground"
+            onClick={() => navigate(paths.resetPassword)}
+          >
+            <KeyRound className="size-3.5" aria-hidden="true" /> Change Password
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-muted-foreground"
+            onClick={() => void signOut().then(() => navigate(paths.signIn, { replace: true }))}
+          >
+            <LogOut className="size-3.5" aria-hidden="true" /> Sign Out
+          </Button>
+        </>
       )}
 
       <AlertDialog onOpenChange={(open) => !open && setConfirmText('')}>

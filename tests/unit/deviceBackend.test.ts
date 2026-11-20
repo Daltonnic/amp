@@ -4,10 +4,10 @@ import { createDeviceBackend } from '@/data/deviceBackend'
 
 const backend = createDeviceBackend()
 
-const checkIn = (date: string, emotional_state: string) => ({
+const checkIn = (date: string, feeling: string) => ({
   track: 'men' as const,
   date,
-  emotional_state,
+  emotions: [feeling],
   custom_emotion: '',
   intensity: null,
   temptation_level: 3,
@@ -43,15 +43,15 @@ describe('device backend', () => {
     await t.insert(checkIn('2026-11-10', 'A'))
     await t.insert(checkIn('2026-11-12', 'B'))
     await t.insert(checkIn('2026-11-14', 'C'))
-    expect((await t.list({ eq: { date: '2026-11-12' } })).map((r) => r.emotional_state)).toEqual(['B'])
+    expect((await t.list({ eq: { date: '2026-11-12' } })).map((r) => r.emotions[0])).toEqual(['B'])
     expect(
       (await t.list({ gte: { date: '2026-11-12' }, orderBy: 'date', ascending: true })).map(
-        (r) => r.emotional_state,
+        (r) => r.emotions[0],
       ),
     ).toEqual(['B', 'C'])
-    expect(
-      (await t.list({ orderBy: 'date', ascending: false, limit: 1 })).map((r) => r.emotional_state),
-    ).toEqual(['C'])
+    expect((await t.list({ orderBy: 'date', ascending: false, limit: 1 })).map((r) => r.emotions[0])).toEqual(
+      ['C'],
+    )
   })
 
   it('updates and removes', async () => {
@@ -74,9 +74,6 @@ describe('device backend', () => {
   })
 
   it('reports cloud-only features clearly', async () => {
-    await expect(backend.sendSupportEmail({ contactId: 'x', kind: 'support' })).rejects.toBeInstanceOf(
-      CloudOnlyError,
-    )
     await expect(backend.streamGroundingGuide([], () => {})).rejects.toBeInstanceOf(CloudOnlyError)
   })
 

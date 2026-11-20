@@ -21,5 +21,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "tests/unit", "supabase/functions/_shared/emails.ts"]
+  "include": ["src", "tests/unit"]
 }

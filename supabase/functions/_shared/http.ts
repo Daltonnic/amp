@@ -64,7 +64,7 @@ export async function authenticate(req: Request): Promise<AuthedRequest | null> 
 /** Counts rows in `table` for this user since `sinceMs` ago (service role). */
 export async function countRecent(
   admin: SupabaseClient,
-  table: 'outbound_emails' | 'ai_usage',
+  table: 'ai_usage',
   userId: string,
   sinceMs: number,
 ): Promise<number> {

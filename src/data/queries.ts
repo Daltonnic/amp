@@ -95,7 +95,8 @@ export interface WeekDay {
   intensity: number | null
   temptation: number | null
   stress: number | null
-  emotion: string | null
+  /** Feelings named that day (selected + own words). */
+  emotions: string[]
   hasData: boolean
 }
 
@@ -122,7 +123,7 @@ export function useWeekCheckIns() {
           intensity: row?.intensity ?? null,
           temptation: row?.temptation_level ?? null,
           stress: row?.stress_level ?? null,
-          emotion: row ? row.emotional_state || row.custom_emotion || null : null,
+          emotions: row ? [...row.emotions, row.custom_emotion.trim()].filter(Boolean) : [],
           hasData: Boolean(row),
         }
       }),

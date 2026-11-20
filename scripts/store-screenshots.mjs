@@ -70,7 +70,7 @@ function seed() {
           user_id: uid,
           track: 'men',
           date,
-          emotional_state: emotions[i],
+          emotions: [emotions[i]],
           custom_emotion: '',
           intensity: null,
           temptation_level: temptation[i],

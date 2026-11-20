@@ -22,10 +22,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useContacts, useCreateContact, useDeleteContact, useProfile } from '@/data/queries'
+import { useContacts, useCreateContact, useDeleteContact } from '@/data/queries'
 import type { AccountabilityContact, AccountabilityContactInput } from '@/data/types'
-import { hapticSuccess } from '@/lib/native'
-import { contactSupport } from '@/lib/support'
+import { hapticTap } from '@/lib/native'
+import { channelFor, normalizePhone, reachOut } from '@/lib/support'
 import { errorMessage } from '@/lib/utils'
 
 const EMPTY: AccountabilityContactInput = { name: '', email: '', phone: '', relationship: '' }
@@ -67,10 +67,12 @@ function AddContactDialog() {
   const [form, setForm] = useState<AccountabilityContactInput>(EMPTY)
   const create = useCreateContact()
   const emailInvalid = form.email.trim() !== '' && !EMAIL_RE.test(form.email.trim())
+  const reachable = Boolean(channelFor(form))
+  const canSave = Boolean(form.name.trim()) && reachable && !emailInvalid
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    if (!form.name.trim() || emailInvalid) return
+    if (!canSave) return
     create.mutate(
       {
         name: form.name.trim(),
@@ -121,7 +123,18 @@ function AddContactDialog() {
             required: true,
             maxLength: 120,
           })}
-          {field('email', 'Email', {
+          {field('phone', 'Mobile number', {
+            type: 'tel',
+            inputMode: 'tel',
+            autoComplete: 'off',
+            placeholder: '(555) 555-0123',
+            maxLength: 40,
+            'aria-describedby': 'phone-hint',
+          })}
+          <p id="phone-hint" className="-mt-2 text-xs text-muted-foreground">
+            Used to text them from your own phone when you need support.
+          </p>
+          {field('email', 'Email (optional)', {
             type: 'email',
             inputMode: 'email',
             placeholder: 'email@example.com',
@@ -130,14 +143,13 @@ function AddContactDialog() {
             'aria-invalid': emailInvalid,
           })}
           {emailInvalid && <p className="-mt-2 text-xs text-destructive">Enter a valid email address.</p>}
-          {field('phone', 'Phone (optional)', {
-            type: 'tel',
-            inputMode: 'tel',
-            placeholder: 'Phone number',
-            maxLength: 40,
-          })}
           {field('relationship', 'Relationship', { placeholder: 'Pastor, friend, mentor...', maxLength: 80 })}
-          <Button type="submit" disabled={!form.name.trim() || emailInvalid} className="w-full">
+          {form.name.trim() && !reachable && (
+            <p className="text-xs text-muted-foreground">
+              Add a mobile number or an email so you can reach them.
+            </p>
+          )}
+          <Button type="submit" disabled={!canSave} className="w-full">
             <UserPlus aria-hidden="true" /> Add Contact
           </Button>
         </form>
@@ -147,33 +159,10 @@ function AddContactDialog() {
 }
 
 function ContactCard({ contact }: { contact: AccountabilityContact }) {
-  const profile = useProfile()
   const remove = useDeleteContact()
-  const [sending, setSending] = useState(false)
   const pending = contact.id.startsWith('temp-')
-
-  const requestCheckIn = async () => {
-    if (!contact.email) {
-      toast.error('No email on file for this contact.')
-      return
-    }
-    setSending(true)
-    try {
-      const result = await contactSupport({
-        contact,
-        kind: 'check_in_request',
-        senderName: profile.data?.display_name,
-      })
-      if (result === 'sent') {
-        hapticSuccess()
-        toast.success(`Check-in request sent to ${contact.name}`)
-      }
-    } catch (err) {
-      toast.error(errorMessage(err))
-    } finally {
-      setSending(false)
-    }
-  }
+  const channel = channelFor(contact)
+  const ChannelIcon = channel === 'email' ? Mail : MessageSquare
 
   return (
     <Card className="p-4">
@@ -210,28 +199,30 @@ function ContactCard({ contact }: { contact: AccountabilityContact }) {
         </AlertDialog>
       </div>
       <div className="mt-3 flex gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex-1"
-          disabled={pending || sending}
-          onClick={() => void requestCheckIn()}
-        >
-          <Mail className="size-3.5" aria-hidden="true" /> {sending ? 'Sending…' : 'Request Check-In'}
-        </Button>
-        {contact.phone && (
-          <>
-            <Button size="sm" variant="outline" asChild>
-              <a href={`sms:${contact.phone}`} aria-label={`Text ${contact.name}`}>
-                <MessageSquare className="size-3.5" aria-hidden="true" /> Text
-              </a>
-            </Button>
-            <Button size="sm" variant="outline" asChild>
-              <a href={`tel:${contact.phone}`} aria-label={`Call ${contact.name}`}>
-                <Phone className="size-3.5" aria-hidden="true" /> Call
-              </a>
-            </Button>
-          </>
+        {channel ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1"
+            disabled={pending}
+            onClick={() => {
+              hapticTap()
+              reachOut(contact, 'check_in_request')
+            }}
+          >
+            <ChannelIcon className="size-3.5" aria-hidden="true" /> Request Check-In
+          </Button>
+        ) : (
+          <p className="flex-1 self-center text-xs text-muted-foreground">
+            Add a mobile number to text them from the app.
+          </p>
+        )}
+        {channel === 'text' && (
+          <Button size="sm" variant="outline" asChild>
+            <a href={`tel:${normalizePhone(contact.phone)}`} aria-label={`Call ${contact.name}`}>
+              <Phone className="size-3.5" aria-hidden="true" /> Call
+            </a>
+          </Button>
         )}
       </div>
     </Card>

@@ -36,7 +36,7 @@ const STEPS: Record<Track, { id: string; label: string }[]> = {
 type Draft = Omit<CheckInInput, 'track' | 'date'>
 
 const EMPTY: Draft = {
-  emotional_state: '',
+  emotions: [],
   custom_emotion: '',
   intensity: 5,
   temptation_level: 3,
@@ -61,7 +61,14 @@ export default function CheckIn() {
 
   const steps = STEPS[track]
   const isMen = track === 'men'
-  const hasEmotion = Boolean(draft.emotional_state || draft.custom_emotion.trim())
+  const hasEmotion = draft.emotions.length > 0 || Boolean(draft.custom_emotion.trim())
+  const toggleEmotion = (emotion: string) =>
+    set(
+      'emotions',
+      draft.emotions.includes(emotion)
+        ? draft.emotions.filter((e) => e !== emotion)
+        : [...draft.emotions, emotion],
+    )
 
   const goTo = (next: number) => {
     setStep(next)
@@ -132,15 +139,16 @@ export default function CheckIn() {
   const emotionStep = (
     <div className="space-y-3">
       <fieldset>
-        <legend className="mb-3 text-sm font-medium text-foreground">
+        <legend className="text-sm font-medium text-foreground">
           {track === 'spouse' ? 'What are you feeling right now?' : 'How are you today?'}
         </legend>
+        <p className="mb-3 mt-1 text-xs text-muted-foreground">Choose as many as fit.</p>
         <div className="flex flex-wrap gap-2">
           {EMOTIONS[track].map((emotion) => (
             <Chip
               key={emotion}
-              selected={draft.emotional_state === emotion}
-              onClick={() => set('emotional_state', draft.emotional_state === emotion ? '' : emotion)}
+              selected={draft.emotions.includes(emotion)}
+              onClick={() => toggleEmotion(emotion)}
             >
               {emotion}
             </Chip>

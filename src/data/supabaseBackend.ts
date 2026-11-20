@@ -1,6 +1,6 @@
 import { FunctionsHttpError, type SupabaseClient } from '@supabase/supabase-js'
 import { config } from '@/lib/config'
-import type { Backend, ListQuery, SupportEmailInput, TableApi } from './backend'
+import type { Backend, ListQuery, TableApi } from './backend'
 import { RateLimitedError } from './backend'
 import type { ChatMessage, Insert, Patch, TableName, Tables } from './types'
 
@@ -65,11 +65,6 @@ export function createSupabaseBackend(sb: SupabaseClient): Backend {
     mode: 'cloud',
 
     table: (name) => supabaseTable(sb, name),
-
-    async sendSupportEmail(input: SupportEmailInput) {
-      const { error } = await sb.functions.invoke('send-support-email', { body: input })
-      if (error) await unwrapFunctionError(error)
-    },
 
     async streamGroundingGuide(messages: ChatMessage[], onText, signal) {
       const { data } = await sb.auth.getSession()

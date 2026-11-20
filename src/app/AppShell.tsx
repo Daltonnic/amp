@@ -134,14 +134,16 @@ function LoadError({ onRetry }: { onRetry: () => void }) {
 
 /** Root: auth gate + native wiring. */
 export function RootLayout() {
-  const { state } = useAuth()
+  const { state, recovering } = useAuth()
   const location = useLocation()
 
-  const publicPaths: string[] = [paths.signIn, paths.privacy]
+  const publicPaths: string[] = [paths.signIn, paths.privacy, paths.resetPassword]
   const isPublic = publicPaths.includes(location.pathname)
 
   let content
   if (state.status === 'loading') content = <FullScreenSpinner />
+  else if (recovering && location.pathname !== paths.resetPassword)
+    content = <Navigate to={paths.resetPassword} replace />
   else if (state.status === 'signed-out' && !isPublic) content = <Navigate to={paths.signIn} replace />
   else if (state.status === 'signed-in' && location.pathname === paths.signIn)
     content = <Navigate to={paths.home} replace />

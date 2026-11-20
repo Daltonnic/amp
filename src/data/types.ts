@@ -28,7 +28,8 @@ export interface CheckIn {
   track: Track
   /** Local calendar date, yyyy-MM-dd. */
   date: string
-  emotional_state: string
+  /** Every feeling selected in "How are you today?" */
+  emotions: string[]
   custom_emotion: string
   intensity: number | null
   temptation_level: number | null

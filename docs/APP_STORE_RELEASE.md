@@ -18,10 +18,10 @@ Run this after every web change before building the native apps.
 
 ## Demo account for reviewers
 
-Apple and Google reviewers must be able to sign in. Since normal sign-in emails a code to an inbox they can't open, the sign-in screen has a small **"Sign in with a password"** option:
+Apple and Google reviewers must be able to sign in with an account you give them:
 
-1. In Supabase → Authentication → Users → **Add user**, create e.g. `review@yourdomain.org` with a strong password and "Auto confirm" checked.
-2. Sign in with it once, finish onboarding, and add a few check-ins and an accountability contact (use your own email) so reviewers see a lived-in app.
+1. In the app, tap **Create an account** and make one for review, e.g. `review@yourdomain.org` with a strong password.
+2. Finish onboarding, and add a few check-ins and an accountability contact (use your own mobile number) so reviewers see a lived-in app.
 3. Put the email and password in App Store Connect (App Review Information) and Play Console (App access).
 
 ## iPhone — App Store
@@ -122,7 +122,7 @@ Both stores ask what data the app collects. Accurate answers for this codebase:
 | Health & fitness, location, contacts list, identifiers, usage data, diagnostics | No        | —                  | —                           | —              |
 
 - **Apple — App Privacy:** use the table above. "Data used to track you": none.
-- **Google — Data safety:** the same data types. Encrypted in transit: **yes**. Users can request deletion: **yes** (in-app). Data shared with third parties: data is _processed_ by service providers (Supabase hosting, Resend email, Anthropic for the AI guide), which Google does not count as "sharing".
+- **Google — Data safety:** the same data types. Encrypted in transit: **yes**. Users can request deletion: **yes** (in-app). Data shared with third parties: data is _processed_ by service providers (Supabase hosting and sign-in, Anthropic for the AI guide), which Google does not count as "sharing".
 - **Google — account deletion URL:** Play requires a web link where people can ask for deletion. Use `https://<your-pwa>/settings` (sign in → Delete Account) and mention your support email on the privacy page.
 - **Google — Health apps declaration** (App content): declare it as a wellness/support app, not a medical device.
 

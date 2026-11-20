@@ -29,18 +29,29 @@ export function computeTrend(days: WeekDay[], track: Track): Trend | null {
   return 'stable'
 }
 
-/** Most frequent emotion of the week; ties go to the most recent. */
+/**
+ * Most frequent emotion of the week, counting every feeling named each day
+ * (case-insensitive). Ties go to the one named most recently.
+ */
 export function mostFrequentEmotion(days: WeekDay[]): string | null {
-  const counts = new Map<string, number>()
-  for (const d of days) if (d.emotion) counts.set(d.emotion, (counts.get(d.emotion) ?? 0) + 1)
+  const counts = new Map<string, { label: string; count: number }>()
+  for (const d of days) {
+    for (const e of new Set(d.emotions.map((x) => x.trim()).filter(Boolean))) {
+      const key = e.toLowerCase()
+      const entry = counts.get(key) ?? { label: e, count: 0 }
+      entry.count++
+      counts.set(key, entry)
+    }
+  }
   let best: string | null = null
   let bestCount = 0
   for (const d of [...days].reverse()) {
-    if (!d.emotion) continue
-    const c = counts.get(d.emotion) ?? 0
-    if (c > bestCount) {
-      best = d.emotion
-      bestCount = c
+    for (const e of d.emotions) {
+      const entry = counts.get(e.trim().toLowerCase())
+      if (entry && entry.count > bestCount) {
+        best = entry.label
+        bestCount = entry.count
+      }
     }
   }
   return best

@@ -1,4 +1,4 @@
-import type { Backend, ListQuery, SupportEmailInput, TableApi } from './backend'
+import type { Backend, ListQuery, TableApi } from './backend'
 import { CloudOnlyError } from './backend'
 import type { Insert, Patch, TableName, Tables } from './types'
 
@@ -86,9 +86,6 @@ export function createDeviceBackend(): Backend {
   return {
     mode: 'device',
     table: (name) => deviceTable(name),
-    async sendSupportEmail(_input: SupportEmailInput) {
-      throw new CloudOnlyError('Sending email')
-    },
     async streamGroundingGuide() {
       throw new CloudOnlyError('The Grounding Guide')
     },

@@ -1,6 +1,7 @@
 export const paths = {
   welcome: '/welcome',
   signIn: '/sign-in',
+  resetPassword: '/reset-password',
   home: '/home',
   checkIn: '/check-in',
   grounding: '/grounding',

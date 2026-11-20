@@ -17,15 +17,6 @@ export interface TableApi<T> {
   remove(id: string): Promise<void>
 }
 
-export type SupportEmailKind = 'support' | 'check_in_request'
-
-export interface SupportEmailInput {
-  contactId: string
-  kind: SupportEmailKind
-  /** One-line summary of today's check-in, included in "I Need Support" emails. */
-  checkInSummary?: string
-}
-
 export interface Backend {
   /**
    * `cloud`: Supabase (production). `device`: everything stays in this
@@ -33,7 +24,6 @@ export interface Backend {
    */
   readonly mode: 'cloud' | 'device'
   table<K extends TableName>(name: K): TableApi<Tables[K]>
-  sendSupportEmail(input: SupportEmailInput): Promise<void>
   /** Streams the Grounding Guide's reply, calling `onText` with each chunk. */
   streamGroundingGuide(
     messages: ChatMessage[],

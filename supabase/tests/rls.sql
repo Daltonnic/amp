@@ -11,7 +11,7 @@ set role authenticated;
 select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
 insert into public.profiles (track) values ('men');
 insert into public.journal_entries (content) values ('private thoughts');
-insert into public.check_ins (track, date, emotional_state) values ('men', current_date, 'Hopeful');
+insert into public.check_ins (track, date, emotions) values ('men', current_date, array['Hopeful', 'Grateful']);
 
 -- User B cannot see or modify A's data.
 select set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', false);
@@ -21,6 +21,15 @@ do $$ begin
   update public.journal_entries set content = 'hacked';
   delete from public.check_ins;
   if (select count(*) from public.library_articles) <> 1 then raise exception 'library: expected only the published article'; end if;
+end $$;
+
+-- More than 20 emotions is rejected.
+do $$ begin
+  begin
+    insert into public.check_ins (track, date, emotions) values ('men', current_date, array_fill('x'::text, array[21]));
+    raise exception 'emotions limit not enforced';
+  exception when check_violation then null;
+  end;
 end $$;
 
 -- B cannot insert a row owned by A.
@@ -51,7 +60,6 @@ end $$;
 -- The Edge Functions' service role can write rate-limit logs.
 reset role;
 set role service_role;
-insert into public.outbound_emails (user_id, kind) values ('11111111-1111-1111-1111-111111111111', 'support');
 insert into public.ai_usage (user_id) values ('11111111-1111-1111-1111-111111111111');
 reset role;
 
@@ -59,11 +67,12 @@ reset role;
 do $$ begin
   if (select content from public.journal_entries) <> 'private thoughts' then raise exception 'A journal was modified by B'; end if;
   if (select count(*) from public.check_ins) <> 1 then raise exception 'A check-in was deleted by B'; end if;
+  if (select emotions from public.check_ins) <> array['Hopeful', 'Grateful'] then raise exception 'emotions not stored'; end if;
 end $$;
 delete from auth.users where id = '11111111-1111-1111-1111-111111111111';
 do $$ begin
   if (select count(*) from public.journal_entries) + (select count(*) from public.profiles) + (select count(*) from public.check_ins)
-     + (select count(*) from public.outbound_emails) + (select count(*) from public.ai_usage) <> 0
+     + (select count(*) from public.ai_usage) <> 0
     then raise exception 'account deletion did not cascade'; end if;
 end $$;
 select 'RLS tests passed' as result;
