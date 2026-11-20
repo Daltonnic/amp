@@ -1,0 +1,33 @@
+# Dependencies & builds
+node_modules/
+dist/
+dev-dist/
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+# Environment (never commit real keys)
+.env
+.env.*
+!.env.example
+
+# Supabase CLI
+supabase/.temp/
+supabase/.branches/
+
+# Native build output (the projects themselves are committed)
+android/local.properties
+ios/App/Pods/
+ios/App/output/
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
