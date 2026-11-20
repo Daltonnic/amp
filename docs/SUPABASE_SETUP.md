@@ -80,7 +80,9 @@ The publishable (anon) key is safe in the app — Row Level Security protects th
 
 ## 6. Library articles
 
-Library articles live in the `library_articles` table. Add or edit them in **Table Editor → library_articles** (`published` controls visibility, `featured` pins up to three to the top). To bring over the Base44 articles, see [MIGRATION_FROM_BASE44.md](MIGRATION_FROM_BASE44.md).
+Library articles live in the `library_articles` table. Add or edit them in **Table Editor → library_articles**: `title`, `content` (blank lines separate paragraphs), `category`, `track` (`men`, `spouse` or `both`), and optionally `scripture_reference`, `read_time_minutes` and `tags`. `published` controls visibility; `featured` pins up to three to the top.
+
+The Library stays hidden from the app's menu until at least one article is published, so launching without articles is fine. If you had articles in Base44, [MIGRATION_FROM_BASE44.md](MIGRATION_FROM_BASE44.md) can import them.
 
 ## Local development against a local Supabase (optional)
 

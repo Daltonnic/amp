@@ -1,5 +1,7 @@
 # Moving from Base44
 
+> **Launching fresh?** If the Base44 app never had real users or Library articles, skip this guide — set up Supabase and start clean.
+
 Everything in the Base44 app's code has been rebuilt here. Three things live only in your Base44 account and need to be brought over by you: **your users' data**, **your Library articles**, and (optionally) **the Grounding Guide agent's instructions**.
 
 ## Mapping

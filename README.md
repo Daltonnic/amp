@@ -23,7 +23,7 @@ Every screen from the Base44 app, with its original wording, Scripture, prayers 
 | Grounding Tools | `/grounding` | Breathing, body grounding, 5-4-3-2-1, prayer, truths, Scripture, reassurance (spouse) |
 | Journal | `/journal` | Templates, guided prompts, free writing, edit/delete, auto-saved drafts |
 | Resources | `/resources` | Men's and spouses' articles |
-| Library | `/library` | Admin-published articles (from the database) |
+| Library | `/library` | Admin-published articles (from the database); appears in the menu once at least one is published |
 | Trigger Awareness | `/triggers` | Trigger log + AI **Grounding Guide** chat |
 | Identity & Scripture | `/identity` | Truths and Scripture meditation |
 | Accountability | `/accountability` | Trusted contacts; request a check-in, text, call |
@@ -103,6 +103,6 @@ To connect a backend, copy `.env.example` to `.env.local` and follow [docs/SUPAB
 ## Guides
 
 - [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md) — create the backend (database, auth, email, AI)
-- [docs/MIGRATION_FROM_BASE44.md](docs/MIGRATION_FROM_BASE44.md) — move users, data and Library articles over
+- [docs/MIGRATION_FROM_BASE44.md](docs/MIGRATION_FROM_BASE44.md) — only if the Base44 app has real users or articles to bring over (a fresh launch can skip it)
 - [docs/DEPLOY_PWA.md](docs/DEPLOY_PWA.md) — put the installable web app online
 - [docs/APP_STORE_RELEASE.md](docs/APP_STORE_RELEASE.md) — ship to the App Store and Google Play

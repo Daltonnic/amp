@@ -17,6 +17,7 @@ import type { LucideIcon } from 'lucide-react'
 import { paths } from '@/app/routes'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/dialog'
 import { DialogDescription, DialogTitle } from '@radix-ui/react-dialog'
+import { useLibrary } from '@/data/queries'
 import { hapticTap } from '@/lib/native'
 import { cn } from '@/lib/utils'
 
@@ -43,7 +44,13 @@ export function TabBar() {
   const [moreOpen, setMoreOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const inMore = MORE.some((m) => location.pathname.startsWith(m.to))
+  const library = useLibrary()
+  // The Library is admin-published content. Until at least one article is
+  // published it stays out of the menu rather than showing an empty section
+  // (App Review rejects placeholder content).
+  const hasArticles = (library.data?.length ?? 0) > 0
+  const more = MORE.filter((m) => m.to !== paths.library || hasArticles)
+  const inMore = more.some((m) => location.pathname.startsWith(m.to))
 
   return (
     <nav
@@ -87,11 +94,9 @@ export function TabBar() {
           </SheetTrigger>
           <SheetContent>
             <DialogTitle className="sr-only">More sections</DialogTitle>
-            <DialogDescription className="sr-only">
-              Library, trigger awareness, identity, accountability and settings
-            </DialogDescription>
+            <DialogDescription className="sr-only">{more.map((m) => m.name).join(', ')}</DialogDescription>
             <ul className="space-y-1 py-2">
-              {MORE.map(({ name, to, icon: Icon }) => (
+              {more.map(({ name, to, icon: Icon }) => (
                 <li key={to}>
                   <NavLink
                     to={to}

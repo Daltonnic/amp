@@ -127,6 +127,7 @@ Both stores ask what data the app collects. Accurate answers for this codebase:
 ## App Review tips
 
 - Don't describe the app as treating or curing addiction; "support", "recovery tools" and "Christ-centered" are accurate.
+- Avoid empty sections: the Library only appears once an article is published, so either publish a few articles before submitting or launch without it.
 - In the review notes, mention: the demo account, that the AI Grounding Guide is on Trigger Awareness → Log → Start Grounding Session, and that account deletion is in Settings.
 - If Apple raises Guideline 4.2 (minimum functionality), point to the native features: scheduled local notifications, biometric app lock, haptics, privacy screen and offline grounding tools.
 

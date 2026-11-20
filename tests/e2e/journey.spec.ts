@@ -200,10 +200,42 @@ test('spouse: track-specific content, resources, identity, library, accountabili
   await page.getByRole('button', { name: 'Done' }).click()
   await expect(page.getByRole('heading', { name: 'Identity in Christ' })).toBeVisible()
 
-  // Library (empty until admins publish articles)
+  // Library: hidden from the menu until an article is published, then shown.
+  await page.getByRole('button', { name: 'More sections' }).click()
+  await expect(page.getByRole('link', { name: 'Identity & Scripture' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Library' })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await page.evaluate(() => {
+    const now = new Date().toISOString()
+    localStorage.setItem(
+      'amp.device.library_articles',
+      JSON.stringify([
+        {
+          id: 'a1',
+          title: 'Walking in the Light',
+          content: 'First paragraph.\n\nSecond paragraph.',
+          category: 'scripture_teaching',
+          track: 'both',
+          scripture_reference: '1 John 1:7',
+          read_time_minutes: 5,
+          tags: 'honesty, light',
+          featured: true,
+          published: true,
+          created_at: now,
+          updated_at: now,
+        },
+      ]),
+    )
+  })
+  await page.reload()
   await page.getByRole('button', { name: 'More sections' }).click()
   await page.getByRole('link', { name: 'Library' }).click()
-  await expect(page.getByText('No articles yet')).toBeVisible()
+  await page
+    .getByRole('button', { name: /Walking in the Light/ })
+    .first()
+    .click()
+  await expect(page.getByRole('heading', { name: 'Walking in the Light' })).toBeVisible()
+  await expect(page.getByText('Second paragraph.')).toBeVisible()
 
   // Accountability: add + remove a contact; Home shows the one-tap support button.
   await page.getByRole('button', { name: 'More sections' }).click()
