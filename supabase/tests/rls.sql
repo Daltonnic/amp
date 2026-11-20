@@ -1,6 +1,6 @@
 -- RLS assertions. Run by supabase/tests/run.sh after the migrations.
 \set ON_ERROR_STOP on
-insert into auth.users values
+insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'a@example.com'),
   ('22222222-2222-2222-2222-222222222222', 'b@example.com');
 insert into public.library_articles (title, content, category) values ('Hello', 'Body', 'recovery');
@@ -48,15 +48,22 @@ do $$ begin
   end;
 end $$;
 
--- A's data is intact; deleting A's auth user cascades everything.
+-- The Edge Functions' service role can write rate-limit logs.
 reset role;
+set role service_role;
+insert into public.outbound_emails (user_id, kind) values ('11111111-1111-1111-1111-111111111111', 'support');
+insert into public.ai_usage (user_id) values ('11111111-1111-1111-1111-111111111111');
+reset role;
+
+-- A's data is intact; deleting A's auth user cascades everything.
 do $$ begin
   if (select content from public.journal_entries) <> 'private thoughts' then raise exception 'A journal was modified by B'; end if;
   if (select count(*) from public.check_ins) <> 1 then raise exception 'A check-in was deleted by B'; end if;
 end $$;
 delete from auth.users where id = '11111111-1111-1111-1111-111111111111';
 do $$ begin
-  if (select count(*) from public.journal_entries) + (select count(*) from public.profiles) + (select count(*) from public.check_ins) <> 0
+  if (select count(*) from public.journal_entries) + (select count(*) from public.profiles) + (select count(*) from public.check_ins)
+     + (select count(*) from public.outbound_emails) + (select count(*) from public.ai_usage) <> 0
     then raise exception 'account deletion did not cascade'; end if;
 end $$;
 select 'RLS tests passed' as result;

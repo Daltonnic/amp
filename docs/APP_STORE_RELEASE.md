@@ -41,6 +41,7 @@ You need: a Mac with the current Xcode, and an Apple Developer Program membershi
 6. In [App Store Connect](https://appstoreconnect.apple.com), create the app (bundle ID above) and fill in the listing below, then **Add for Review**.
 
 Already handled in the project:
+
 - Face ID permission text, export-compliance flag (standard HTTPS only), portrait orientation.
 - iPhone-only (iPads run it in compatibility mode, so iPad screenshots aren't required).
 - `PrivacyInfo.xcprivacy` privacy manifest.
@@ -61,9 +62,10 @@ You need: Android Studio, and a Google Play developer account ($25 once).
 3. Increase `versionCode` in `android/app/build.gradle` for every upload; `versionName` is the public version.
 4. **Build → Generate Signed App Bundle** → release. Upload the `.aab` in Play Console.
 5. Enroll in **Play App Signing** when prompted.
-6. Start with **Internal testing**, then **Closed testing**. A new *personal* developer account must run a closed test with at least 12 testers for 14 days before it can publish to production.
+6. Start with **Internal testing**, then **Closed testing**. A new _personal_ developer account must run a closed test with at least 12 testers for 14 days before it can publish to production.
 
 Already handled in the project:
+
 - Targets Android 16 (API 36), with edge-to-edge layout.
 - Portrait orientation.
 - Cloud backup and device-to-device transfer of app data disabled (personal data and the login session never leave the phone that way).
@@ -110,17 +112,17 @@ Already handled in the project:
 
 Both stores ask what data the app collects. Accurate answers for this codebase:
 
-| Data | Collected | Linked to the user | Purpose | Tracking / ads |
-| --- | --- | --- | --- | --- |
-| Email address | Yes | Yes | App functionality (sign-in) | No |
-| Name (optional display name; contacts' names) | Yes | Yes | App functionality | No |
-| Phone number (accountability contacts) | Yes | Yes | App functionality | No |
-| Sensitive info (recovery and faith context) | Yes | Yes | App functionality | No |
-| Other user content (check-ins, journal, trigger logs) | Yes | Yes | App functionality | No |
-| Health & fitness, location, contacts list, identifiers, usage data, diagnostics | No | — | — | — |
+| Data                                                                            | Collected | Linked to the user | Purpose                     | Tracking / ads |
+| ------------------------------------------------------------------------------- | --------- | ------------------ | --------------------------- | -------------- |
+| Email address                                                                   | Yes       | Yes                | App functionality (sign-in) | No             |
+| Name (optional display name; contacts' names)                                   | Yes       | Yes                | App functionality           | No             |
+| Phone number (accountability contacts)                                          | Yes       | Yes                | App functionality           | No             |
+| Sensitive info (recovery and faith context)                                     | Yes       | Yes                | App functionality           | No             |
+| Other user content (check-ins, journal, trigger logs)                           | Yes       | Yes                | App functionality           | No             |
+| Health & fitness, location, contacts list, identifiers, usage data, diagnostics | No        | —                  | —                           | —              |
 
 - **Apple — App Privacy:** use the table above. "Data used to track you": none.
-- **Google — Data safety:** the same data types. Encrypted in transit: **yes**. Users can request deletion: **yes** (in-app). Data shared with third parties: data is *processed* by service providers (Supabase hosting, Resend email, Anthropic for the AI guide), which Google does not count as "sharing".
+- **Google — Data safety:** the same data types. Encrypted in transit: **yes**. Users can request deletion: **yes** (in-app). Data shared with third parties: data is _processed_ by service providers (Supabase hosting, Resend email, Anthropic for the AI guide), which Google does not count as "sharing".
 - **Google — account deletion URL:** Play requires a web link where people can ask for deletion. Use `https://<your-pwa>/settings` (sign in → Delete Account) and mention your support email on the privacy page.
 - **Google — Health apps declaration** (App content): declare it as a wellness/support app, not a medical device.
 

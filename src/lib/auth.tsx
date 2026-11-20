@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useQueryClient } from '@tanstack/react-query'
 import { DEVICE_USER_ID } from '@/data/deviceBackend'
 import { isCloudConfigured } from './config'
+import { isNative } from './native'
 import { getSupabase } from './supabase'
 
 export type AuthState =
@@ -50,7 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sendCode = useCallback(async (email: string) => {
     const { error } = await getSupabase().auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        // If the email contains a link, bring the person back to this site.
+        emailRedirectTo: isNative ? undefined : window.location.origin,
+      },
     })
     if (error) throw error
   }, [])

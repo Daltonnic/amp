@@ -28,9 +28,11 @@ export function getSupabase(): SupabaseClient {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      // Sign-in uses one-time codes typed into the app, so there is no
-      // redirect URL to parse. This keeps native and web flows identical.
-      detectSessionInUrl: false,
+      // Sign-in is normally a code typed into the app. On the web we also
+      // accept the email's sign-in link (e.g. Supabase's default template),
+      // which lands back here with the session in the URL. The native apps
+      // never receive such links, so they skip the check.
+      detectSessionInUrl: !Capacitor.isNativePlatform(),
       storage: Capacitor.isNativePlatform() ? nativeStorage : globalThis.localStorage,
       storageKey: 'amp.auth',
     },

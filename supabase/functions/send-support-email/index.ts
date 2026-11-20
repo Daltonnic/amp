@@ -39,6 +39,12 @@ Deno.serve(async (req) => {
     const auth = await authenticate(req)
     if (!auth) return json(req, 401, { error: 'Please sign in again.' })
 
+    if (!Deno.env.get('RESEND_API_KEY') || !Deno.env.get('EMAIL_FROM')) {
+      return json(req, 503, {
+        error: "Email sending isn't set up yet. Please call or text your contact directly.",
+      })
+    }
+
     const body = (await req.json().catch(() => ({}))) as Body
     const kind = body.kind as EmailKind
     if (typeof body.contactId !== 'string' || (kind !== 'support' && kind !== 'check_in_request')) {

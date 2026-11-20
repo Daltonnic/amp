@@ -7,16 +7,19 @@ enabled = true
 port = 54321
 schemas = ["public"]
 max_rows = 1000
+# Match the cloud project: tables are only reachable through the API with
+# explicit GRANTs (see the api_grants migration).
+auto_expose_new_tables = false
 
 [db]
 port = 54322
-major_version = 15
+major_version = 17
 
 [studio]
 enabled = true
 port = 54323
 
-[inbucket]
+[local_smtp]
 # Local email testing UI (http://localhost:54324) — sign-in codes land here.
 enabled = true
 port = 54324
@@ -32,7 +35,7 @@ enable_signup = true
 enable_anonymous_sign_ins = false
 
 [auth.email]
-enable_signup = true
+enabled = true
 double_confirm_changes = true
 # Passwordless: users sign in with a 6-digit code emailed to them.
 enable_confirmations = false

@@ -9,5 +9,6 @@ create function auth.uid() returns uuid language sql stable as
   $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 grant usage on schema auth to anon, authenticated, service_role;
 grant usage on schema public to anon, authenticated, service_role;
-alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
-alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+-- Mirror current Supabase defaults: API roles get NO data privileges on new
+-- tables, so the migrations must grant them explicitly.
+alter default privileges in schema public grant truncate, references, trigger on tables to anon, authenticated, service_role;

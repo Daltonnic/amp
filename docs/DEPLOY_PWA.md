@@ -16,10 +16,10 @@ The output is in `dist/`. It must be served over **HTTPS** (required for install
 
 Configuration for the common hosts is already in the repo:
 
-| Host | What's included |
-| --- | --- |
-| **Vercel** | `vercel.json` — SPA rewrites, security headers, caching |
-| **Netlify** / **Cloudflare Pages** | `public/_redirects` and `public/_headers` |
+| Host                               | What's included                                         |
+| ---------------------------------- | ------------------------------------------------------- |
+| **Vercel**                         | `vercel.json` — SPA rewrites, security headers, caching |
+| **Netlify** / **Cloudflare Pages** | `public/_redirects` and `public/_headers`               |
 
 Settings for all of them: build command `npm run build`, output directory `dist`, Node 22.
 

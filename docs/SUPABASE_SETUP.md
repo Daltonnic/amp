@@ -3,6 +3,7 @@
 The app needs one Supabase project. The free tier is enough to start.
 
 You'll need:
+
 - a [Supabase](https://supabase.com) account
 - a [Resend](https://resend.com) account (for accountability emails and sign-in codes) with your domain verified
 - an [Anthropic API](https://console.anthropic.com) key (for the Grounding Guide)
@@ -26,19 +27,18 @@ npx supabase link --project-ref <your-project-ref>
 npx supabase db push
 ```
 
-This creates the tables and Row Level Security from `supabase/migrations/`. Every personal table only lets a signed-in user see and change their own rows, and deleting a user deletes all of their data. `npm run test:db` proves this against a real PostgreSQL.
+This creates the tables, Row Level Security and the table grants from `supabase/migrations/`. (Newer Supabase projects don't expose new tables to the API automatically; the `api_grants` migration grants exactly what the app needs.) Every personal table only lets a signed-in user see and change their own rows, and deleting a user deletes all of their data. `npm run test:db` proves this against a real PostgreSQL.
 
 ## 3. Configure sign-in (email codes)
 
-In **Authentication → Sign In / Providers → Email**:
-- Email provider: **on**. "Confirm email": **off** (the code itself confirms the address).
-- Email OTP length: **6**. Expiry: **900** seconds.
+In **Authentication → Sign In / Providers → Email**: keep Email on and "Confirm email" on (the code someone types proves they own the address). Set Email OTP length to **6** and expiry to **900** seconds.
 
-In **Authentication → Emails → Templates**, set **both** "Magic Link" and "Confirm signup" to the contents of `supabase/templates/sign-in-code.html`, with subject `Your AMP sign-in code`. The template shows `{{ .Token }}` — the 6-digit code people type into the app.
+Supabase's built-in email sender is for testing only: about 2 emails an hour, delivered only to your own team's addresses, and on the free plan its templates can't be edited — so it sends a sign-in **link** rather than a code. The web app accepts that link, so you can test right away; the iPhone/Android apps need the code. Before launch:
 
-In **Authentication → Emails → SMTP Settings**, turn on custom SMTP and enter your Resend SMTP details (host `smtp.resend.com`, port 465, user `resend`, password = a Resend API key, sender e.g. `care@yourdomain.org`). Supabase's built-in email is limited to a few messages an hour and is not for production.
+1. In **Authentication → Emails → SMTP Settings**, turn on custom SMTP with your Resend details (host `smtp.resend.com`, port 465, user `resend`, password = a Resend API key, sender e.g. `care@yourdomain.org`).
+2. Then in **Authentication → Emails → Templates**, set both "Magic Link" and "Confirm signup" to `supabase/templates/sign-in-code.html` with subject `Your AMP sign-in code`. It shows `{{ .Token }}`, the code people type into the app.
 
-In **Authentication → URL Configuration**, set Site URL to your PWA's URL.
+In **Authentication → URL Configuration**, set Site URL to your PWA's URL (the Vercel integration does this for you) and add `capacitor://localhost` and `https://localhost` to the redirect URLs for the native apps.
 
 ## 4. Deploy the Edge Functions
 
@@ -59,6 +59,7 @@ npx supabase functions deploy delete-account
 ```
 
 Optional secrets:
+
 - `ALLOWED_ORIGINS` — comma-separated origins allowed to call the functions (default `*`; calls are authenticated by token, not cookies).
 - `GROUNDING_GUIDE_MODEL` (default `claude-opus-5-5`) and `GROUNDING_GUIDE_EFFORT` (`low` default; `medium`/`high` for more considered replies at higher latency and cost).
 

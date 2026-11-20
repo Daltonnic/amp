@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/controls'
 import { paths } from '@/app/routes'
 import { useAuth } from '@/lib/auth'
+import { isNative } from '@/lib/native'
 import { errorMessage } from '@/lib/utils'
 
 export default function SignIn() {
@@ -158,8 +159,13 @@ export default function SignIn() {
             <div className="space-y-1 text-center">
               <h1 className="font-display text-2xl font-semibold">Check your email</h1>
               <p className="text-sm text-muted-foreground">
-                We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>.
+                We sent a sign-in code to <span className="font-medium text-foreground">{email}</span>.
               </p>
+              {!isNative && (
+                <p className="text-xs text-muted-foreground">
+                  If the email has a sign-in button instead, open it on this device.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="code">Sign-in code</Label>
@@ -168,7 +174,7 @@ export default function SignIn() {
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 pattern="[0-9]*"
-                maxLength={6}
+                maxLength={10}
                 required
                 autoFocus
                 placeholder="123456"
@@ -182,7 +188,7 @@ export default function SignIn() {
                 {error}
               </p>
             )}
-            <Button type="submit" size="lg" className="w-full" disabled={busy || code.length !== 6}>
+            <Button type="submit" size="lg" className="w-full" disabled={busy || code.length < 6}>
               {busy ? 'Signing in…' : 'Sign in'}
             </Button>
             <div className="flex justify-between text-sm">

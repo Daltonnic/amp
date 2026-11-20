@@ -10,16 +10,7 @@
  *           GROUNDING_GUIDE_EFFORT (low | medium | high; default low)
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@1.12.0'
-import {
-  adminClient,
-  authenticate,
-  corsHeaders,
-  countRecent,
-  DAY,
-  HOUR,
-  json,
-  requireEnv,
-} from '../_shared/http.ts'
+import { adminClient, authenticate, corsHeaders, countRecent, DAY, HOUR, json } from '../_shared/http.ts'
 import { systemPrompt } from './prompt.ts'
 
 const LIMIT_PER_HOUR = 60
@@ -54,11 +45,21 @@ function validate(messages: unknown): Message[] | null {
   return out.at(-1)?.role === 'user' ? out : null
 }
 
-const anthropic = new Anthropic({ apiKey: requireEnv('ANTHROPIC_API_KEY') })
+// Created on first use so a missing key yields a clear message, not a crash.
+let anthropic: Anthropic | null = null
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
   if (req.method !== 'POST') return json(req, 405, { error: 'Method not allowed' })
+
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!apiKey) {
+    return json(req, 503, {
+      error: "The Grounding Guide isn't set up yet. The grounding tools are always available.",
+    })
+  }
+  anthropic ??= new Anthropic({ apiKey })
+  const client = anthropic
 
   const auth = await authenticate(req)
   if (!auth) return json(req, 401, { error: 'Please sign in again.' })
@@ -96,7 +97,7 @@ Deno.serve(async (req) => {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        const response = anthropic.beta.messages.stream(
+        const response = client.beta.messages.stream(
           {
             model: MODEL,
             max_tokens: 16000,
