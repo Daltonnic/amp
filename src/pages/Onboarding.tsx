@@ -65,7 +65,7 @@ export default function Onboarding() {
   const options = NEEDS[track === 'spouse' ? 'spouse' : 'men']
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background pt-safe pb-safe">
+    <div className="flex min-h-dvh flex-col pt-safe pb-safe">
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <div className="px-6 pb-2 pt-6">
           <StepProgress total={ONBOARDING_STEPS.length} current={step} />

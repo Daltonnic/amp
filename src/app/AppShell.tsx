@@ -4,6 +4,7 @@ import { App as CapApp } from '@capacitor/app'
 import { Keyboard } from '@capacitor/keyboard'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { WifiOff } from 'lucide-react'
+import { PageBackground } from '@/components/PageBackground'
 import { TabBar } from '@/components/TabBar'
 import { useProfile } from '@/data/queries'
 import { useAuth } from '@/lib/auth'
@@ -89,7 +90,7 @@ export function TabsLayout() {
   if (!profile.data) return <Navigate to={paths.welcome} replace />
 
   return (
-    <div className="min-h-dvh bg-background pt-safe">
+    <div className="min-h-dvh pt-safe">
       {!online && (
         <div
           role="status"
@@ -158,6 +159,7 @@ export function RootLayout() {
     <>
       <NativeBridge />
       <ScrollRestoration />
+      <PageBackground />
       {content}
     </>
   )

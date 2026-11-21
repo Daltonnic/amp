@@ -53,7 +53,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background px-6 pt-safe pb-safe">
+    <div className="flex min-h-dvh flex-col px-6 pt-safe pb-safe">
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 py-10">
         <BrandMark className="mx-auto size-16" />
 

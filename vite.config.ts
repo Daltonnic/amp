@@ -127,7 +127,7 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+          globPatterns: ['**/*.{js,css,html,svg,png,webp,ico,woff2}'],
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/functions\//, /^\/auth\//, /^\/rest\//],
           cleanupOutdatedCaches: true,

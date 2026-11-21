@@ -98,7 +98,7 @@ export default function SignIn() {
   )
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background px-6 pt-safe pb-safe">
+    <div className="flex min-h-dvh flex-col px-6 pt-safe pb-safe">
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
         <BrandLogo className="mx-auto mb-8 h-auto w-56" />
 
