@@ -20,7 +20,7 @@
     "cap:sync": "npm run build && cap sync",
     "cap:ios": "npm run cap:sync && cap open ios",
     "cap:android": "npm run cap:sync && cap open android",
-    "assets": "capacitor-assets generate --ios --android --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#0d1526' --splashBackgroundColor '#f3f4f7' --splashBackgroundColorDark '#0d1526'",
+    "assets": "capacitor-assets generate --ios --android --iconBackgroundColor '#13284b' --iconBackgroundColorDark '#13284b' --splashBackgroundColor '#f3f4f7' --splashBackgroundColorDark '#0d1526'",
     "import:base44": "node scripts/import-base44.mjs",
     "typecheck:functions": "tsc -p tsconfig.functions.json",
     "test:db": "bash supabase/tests/run.sh"
