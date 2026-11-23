@@ -17,15 +17,15 @@ const ALL_ROUTES = [
 ]
 
 describe('page backgrounds', () => {
-  it('never shows the men’s track a photo with women or phone-scrolling', () => {
+  it('never shows the men’s track a woman on her own or phone-scrolling', () => {
     for (const route of ALL_ROUTES) {
-      expect(['sunset', 'counselMen']).toContain(photoFor(route, 'men'))
+      expect(['sunset', 'counsel']).toContain(photoFor(route, 'men'))
     }
   })
 
   it('treats an unknown track (signed out, onboarding) like the men’s track', () => {
     for (const route of ALL_ROUTES) {
-      expect(['sunset', 'counselMen']).toContain(photoFor(route, null))
+      expect(['sunset', 'counsel']).toContain(photoFor(route, null))
     }
   })
 
@@ -33,6 +33,12 @@ describe('page backgrounds', () => {
     expect(photoFor('/journal', 'spouse')).toBe('reflection')
     expect(photoFor('/accountability', 'spouse')).toBe('counsel')
     expect(photoFor('/triggers', 'spouse')).toBe('screens')
+  })
+
+  it('shows men the family picture (couple with their pastor) on support screens', () => {
+    expect(photoFor('/accountability', 'men')).toBe('counsel')
+    expect(photoFor('/journal', 'men')).toBe('sunset')
+    expect(photoFor('/triggers', 'men')).toBe('sunset')
   })
 
   it('leaves Settings and Privacy plain', () => {

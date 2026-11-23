@@ -9,24 +9,23 @@ import { useAuth } from '@/lib/auth'
  * theme's background color (navy in dark mode, soft grey-white in light), so
  * it reads as atmosphere and never competes with the text.
  *
- * The men's track (and anyone whose track isn't known yet) only ever sees
- * photos without women in them, and never the photo of someone scrolling a
- * phone. The spouse track uses the full set.
+ * The men's track (and anyone whose track isn't known yet) never sees a
+ * photo of a woman on her own, or the photo of someone scrolling a phone.
+ * Family pictures (the married couple meeting with their pastor) are fine.
+ * The spouse track uses the full set.
  */
 
 const PHOTOS = {
   sunset: { src: '/backgrounds/sunset-study.webp', position: '22% 50%' },
   reflection: { src: '/backgrounds/quiet-reflection.webp', position: '30% 50%' },
   counsel: { src: '/backgrounds/pastoral-counsel.webp', position: '50% 40%' },
-  /** Cropped to the pastor and the man only. */
-  counselMen: { src: '/backgrounds/pastoral-counsel-men.webp', position: '60% 40%' },
   screens: { src: '/backgrounds/screens.webp', position: '50% 50%' },
 } as const
 
 type Photo = keyof typeof PHOTOS
 
-/** Photos the men's track may see: no women, no phone-scrolling. */
-const MEN_SAFE: ReadonlySet<Photo> = new Set<Photo>(['sunset', 'counselMen'])
+/** Photos the men's track may see: no woman on her own, no phone-scrolling. */
+const MEN_SAFE: ReadonlySet<Photo> = new Set<Photo>(['sunset', 'counsel'])
 
 /** Which photo each screen uses, per track. Screens not listed (Settings, Privacy) stay plain. */
 const ROUTE_PHOTOS: Record<string, Record<Track, Photo>> = {
@@ -38,9 +37,9 @@ const ROUTE_PHOTOS: Record<string, Record<Track, Photo>> = {
   [paths.identity]: { men: 'sunset', spouse: 'sunset' },
   [paths.checkIn]: { men: 'sunset', spouse: 'reflection' },
   [paths.journal]: { men: 'sunset', spouse: 'reflection' },
-  [paths.resources]: { men: 'counselMen', spouse: 'counsel' },
-  [paths.library]: { men: 'counselMen', spouse: 'counsel' },
-  [paths.accountability]: { men: 'counselMen', spouse: 'counsel' },
+  [paths.resources]: { men: 'counsel', spouse: 'counsel' },
+  [paths.library]: { men: 'counsel', spouse: 'counsel' },
+  [paths.accountability]: { men: 'counsel', spouse: 'counsel' },
   [paths.triggers]: { men: 'sunset', spouse: 'screens' },
 }
 
