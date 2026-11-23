@@ -32,10 +32,11 @@ export const keys = {
 // Profile
 // ---------------------------------------------------------------------------
 
-export function useProfile() {
+export function useProfile({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: keys.profile,
     queryFn: async () => (await backend.table('profiles').list({ limit: 1 }))[0] ?? null,
+    enabled,
   })
 }
 
