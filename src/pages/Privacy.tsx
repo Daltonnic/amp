@@ -112,11 +112,11 @@ export default function Privacy() {
           <H>When information leaves the app</H>
           <ul className="space-y-1">
             <li>
-              <strong>Messages to your accountability contacts.</strong> When you tap "I Need Support" or
-              "Request Check-In", AMP opens your phone's Messages app (or email app) with a message ready for
-              you to review and send. It is sent from your own phone number or email account; AMP never sends
-              it and keeps no copy. "I Need Support" includes a one-line summary of today's check-in, which
-              you can edit before sending.
+              <strong>Messages to your accountability contacts.</strong> When you tap someone under "Help Me
+              Now" (I Need Support) or "Request Check-In", AMP opens your phone's Messages app (or email app)
+              with a message ready for you to review and send. It is sent from your own phone number or email
+              account; AMP never sends it and keeps no copy. "I Need Support" includes a one-line summary of
+              today's check-in, which you can edit before sending.
             </li>
             <li>
               <strong>Grounding Guide (AI).</strong> If you start a Grounding Guide session, the trigger log

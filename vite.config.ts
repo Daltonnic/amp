@@ -109,7 +109,7 @@ export default defineConfig(({ mode }) => {
             {
               name: 'Help Me Now',
               short_name: 'Help',
-              url: '/grounding',
+              url: '/home?help=1',
               icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }],
             },
             {

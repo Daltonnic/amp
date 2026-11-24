@@ -61,7 +61,8 @@ export function TabBar() {
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 pb-safe backdrop-blur supports-[backdrop-filter]:bg-card/85"
     >
-      <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 py-1.5">
+      {/* Exactly --tabbar-height tall, so screens that sit above it (the group chat's message bar) line up with it. */}
+      <div className="mx-auto flex h-[var(--tabbar-height)] max-w-lg items-stretch justify-around px-1 py-1.5">
         {TABS.map(({ name, to, icon: Icon }) => (
           <NavLink
             key={to}

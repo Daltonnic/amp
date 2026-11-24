@@ -178,7 +178,19 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
   }, [])
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col">
+    <div
+      className="mx-auto flex w-full max-w-2xl flex-col"
+      // Fill the screen down to the tab bar, so the message bar always sits right on it.
+      // (With the keyboard open there's no tab bar; the message bar sits right on the keyboard.)
+      style={
+        keyboardOpen
+          ? { minHeight: 'calc(100dvh - env(safe-area-inset-top, 0px))', marginBottom: -16 }
+          : {
+              minHeight:
+                'calc(100dvh - env(safe-area-inset-top, 0px) - var(--tabbar-height) - env(safe-area-inset-bottom, 0px))',
+            }
+      }
+    >
       {/* Covers the status bar area so scrolled messages don't show behind it. */}
       <div
         aria-hidden="true"
@@ -222,11 +234,7 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
         </p>
       )}
 
-      <div
-        role="log"
-        aria-label={`${info.name} messages`}
-        className="flex min-h-[calc(100dvh-var(--tabbar-height)-12rem)] flex-1 flex-col px-3 pb-3 pt-2"
-      >
+      <div role="log" aria-label={`${info.name} messages`} className="flex flex-1 flex-col px-3 pb-3 pt-2">
         <div ref={topRef} />
         {isFetchingNextPage && (
           <div className="flex justify-center py-3" role="status" aria-label="Loading earlier messages">
@@ -547,7 +555,8 @@ function Composer({
   return (
     <form
       onSubmit={submit}
-      className="sticky z-20 border-t bg-background/95 px-3 pb-2 pt-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+      // Same surface as the tab bar, so the two read as one bar.
+      className="sticky z-20 border-t bg-card/95 px-3 pb-2 pt-2 backdrop-blur supports-[backdrop-filter]:bg-card/85"
       style={{ bottom: keyboardOpen ? 0 : 'calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px))' }}
     >
       {replyTo && (

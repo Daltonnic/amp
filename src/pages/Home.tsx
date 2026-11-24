@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import {
   BookOpen,
   Circle,
@@ -38,6 +37,10 @@ export default function Home() {
   const today = useTodayCheckIn()
   const week = useWeekCheckIns()
   const contacts = useContacts()
+  // ?help=1 opens "I Need Support" (also the "Help Me Now" app shortcut).
+  const [params, setParams] = useSearchParams()
+  const helpOpen = params.get('help') === '1'
+  const setHelpOpen = (open: boolean) => setParams(open ? { help: '1' } : {}, { replace: true })
 
   if (profile.isPending || !profile.data) {
     return (
@@ -68,13 +71,13 @@ export default function Home() {
         {!profile.data.gender && <AboutYouPrompt profileId={profile.data.id} />}
         <NotificationsPrompt />
         <InstallPrompt />
+        <QuickActions onHelp={() => setHelpOpen(true)} />
         <Encouragement track={track} />
-        <QuickActions />
-        <SupportButton todayCheckIn={today.data ?? null} />
         <WeeklyInsights track={track} />
         <TodayCheckInCard checkIn={today.data ?? null} />
         <TodaysFocus track={track} />
       </div>
+      <SupportSheet open={helpOpen} onOpenChange={setHelpOpen} todayCheckIn={today.data ?? null} />
     </PullToRefresh>
   )
 }
@@ -89,8 +92,7 @@ function Encouragement({ track }: { track: Track }) {
   )
 }
 
-const QUICK_ACTIONS: { label: string; to: string; icon: LucideIcon; color: string }[] = [
-  { label: 'Help Me Now', to: paths.grounding, icon: Shield, color: 'bg-primary text-primary-foreground' },
+const QUICK_LINKS: { label: string; to: string; icon: LucideIcon; color: string }[] = [
   {
     label: 'Check In',
     to: paths.checkIn,
@@ -106,17 +108,28 @@ const QUICK_ACTIONS: { label: string; to: string; icon: LucideIcon; color: strin
   },
 ]
 
-function QuickActions() {
+const tileClass =
+  'flex size-14 items-center justify-center rounded-2xl transition-transform group-active:scale-95'
+
+function QuickActions({ onHelp }: { onHelp: () => void }) {
   return (
     <nav aria-label="Quick actions" className="grid grid-cols-4 gap-3">
-      {QUICK_ACTIONS.map(({ label, to, icon: Icon, color }) => (
+      <button
+        type="button"
+        onClick={() => {
+          hapticTap()
+          onHelp()
+        }}
+        className="group flex flex-col items-center gap-2"
+      >
+        <span className={cn(tileClass, 'bg-primary text-primary-foreground')}>
+          <Shield className="size-5" aria-hidden="true" />
+        </span>
+        <span className="text-center text-xs font-medium leading-tight text-foreground">Help Me Now</span>
+      </button>
+      {QUICK_LINKS.map(({ label, to, icon: Icon, color }) => (
         <Link key={label} to={to} className="group flex flex-col items-center gap-2">
-          <span
-            className={cn(
-              'flex size-14 items-center justify-center rounded-2xl transition-transform group-active:scale-95',
-              color,
-            )}
-          >
+          <span className={cn(tileClass, color)}>
             <Icon className="size-5" aria-hidden="true" />
           </span>
           <span className="text-center text-xs font-medium leading-tight text-foreground">{label}</span>
@@ -126,53 +139,47 @@ function QuickActions() {
   )
 }
 
-function SupportButton({ todayCheckIn }: { todayCheckIn: CheckIn | null }) {
+/**
+ * "Help Me Now": the people you trust, each one tap from a ready-to-send
+ * text (or email, for a contact without a mobile number).
+ */
+function SupportSheet({
+  open,
+  onOpenChange,
+  todayCheckIn,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  todayCheckIn: CheckIn | null
+}) {
   const contacts = useContacts()
-  const [chooserOpen, setChooserOpen] = useState(false)
   const reachable = (contacts.data ?? []).filter((c) => !c.id.startsWith('temp-') && channelFor(c))
-
-  if (reachable.length === 0) {
-    return (
-      <Link
-        to={paths.accountability}
-        className="flex items-center gap-3 rounded-xl border border-dashed bg-card p-4 text-sm text-muted-foreground transition-colors hover:bg-muted/40"
-      >
-        <HandHeart className="size-5 shrink-0 text-primary" aria-hidden="true" />
-        <span>Add a trusted contact's mobile number to reach out in one tap</span>
-      </Link>
-    )
-  }
 
   const send = (contact: AccountabilityContact) => {
     hapticTap()
-    setChooserOpen(false)
+    onOpenChange(false)
     reachOut(contact, 'support', todayCheckIn)
   }
-  const only = reachable.length === 1 ? reachable[0]! : null
-  const subtitle = only
-    ? `${channelFor(only) === 'text' ? 'Text' : 'Email'} ${only.name} (${only.relationship || 'contact'})`
-    : `Choose who to reach (${reachable.length} contacts)`
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => (only ? send(only) : setChooserOpen(true))}
-        className="flex w-full items-center gap-3 rounded-xl border border-primary/20 bg-primary/10 p-4 text-left text-primary transition-all hover:bg-primary/15 active:scale-[0.98]"
-      >
-        <HandHeart className="size-5 shrink-0" aria-hidden="true" />
-        <span>
-          <span className="block text-sm font-medium leading-tight">I Need Support</span>
-          <span className="mt-0.5 block text-xs opacity-75">{subtitle}</span>
-        </span>
-      </button>
-      <Sheet open={chooserOpen} onOpenChange={setChooserOpen}>
-        <SheetContent>
-          <DialogTitle className="px-2 pt-2 text-base">Who do you want to reach?</DialogTitle>
-          <DialogDescription className="px-2 text-sm">
-            A message will open, ready for you to send.
-          </DialogDescription>
-          <ul className="space-y-1 py-3">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="max-h-[85dvh] overflow-y-auto">
+        <DialogTitle className="flex items-center gap-2 px-2 pt-2 text-base">
+          <HandHeart className="size-5 text-primary" aria-hidden="true" /> I Need Support
+        </DialogTitle>
+        <DialogDescription className="px-2 text-sm">
+          {reachable.length > 0
+            ? 'Tap someone to text them. A message will open, ready for you to send.'
+            : 'Add the people you trust, so reaching out is one tap away.'}
+        </DialogDescription>
+
+        {contacts.isPending ? (
+          <div className="space-y-2 py-3">
+            <Skeleton className="h-14 w-full rounded-lg" />
+            <Skeleton className="h-14 w-full rounded-lg" />
+          </div>
+        ) : reachable.length > 0 ? (
+          <ul className="space-y-1 py-3" aria-label="Support people">
             {reachable.map((c) => {
               const text = channelFor(c) === 'text'
               const Icon = text ? MessageSquare : Mail
@@ -196,9 +203,38 @@ function SupportButton({ todayCheckIn }: { todayCheckIn: CheckIn | null }) {
               )
             })}
           </ul>
-        </SheetContent>
-      </Sheet>
-    </>
+        ) : (
+          <div className="py-4">
+            <Link
+              to={paths.accountability}
+              onClick={() => onOpenChange(false)}
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
+            >
+              <HandHeart className="size-4" aria-hidden="true" /> Add a support person
+            </Link>
+          </div>
+        )}
+
+        <div className="space-y-1 border-t pb-1 pt-3 text-center">
+          {reachable.length > 0 && (
+            <Link
+              to={paths.accountability}
+              onClick={() => onOpenChange(false)}
+              className="inline-flex min-h-11 items-center px-3 text-sm font-medium text-primary"
+            >
+              Add or change support people
+            </Link>
+          )}
+          <p className="text-xs text-muted-foreground">
+            In danger right now? Call or text{' '}
+            <a href="tel:988" className="font-semibold text-primary underline">
+              988
+            </a>
+            , or call 911.
+          </p>
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 

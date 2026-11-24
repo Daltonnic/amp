@@ -76,7 +76,13 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
   // Home
   await expect(page.getByText('Complete daily check-ins to see your emotional patterns here.')).toBeVisible()
   await expect(page.getByText("Today's Focus")).toBeVisible()
-  await expect(page.getByRole('link', { name: /Add a trusted contact's mobile number/ })).toBeVisible()
+  // Help Me Now opens "I Need Support"; with nobody added yet it offers to add someone.
+  await page.getByRole('button', { name: 'Help Me Now' }).click()
+  const help = page.getByRole('dialog', { name: 'I Need Support' })
+  await expect(help.getByRole('link', { name: 'Add a support person' })).toBeVisible()
+  await expect(help.getByRole('link', { name: '988' })).toHaveAttribute('href', 'tel:988')
+  await page.keyboard.press('Escape')
+  await expect(help).toBeHidden()
 
   // Daily check-in (6 steps). A custom emotion alone is enough to continue.
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Check-In' }).click()
@@ -303,21 +309,26 @@ test('spouse: track-specific content, resources, identity, library, accountabili
   expect(checkInLink).toMatch(/^sms:5550100100[?&]body=/)
   expect(decodeURIComponent(checkInLink)).toContain('Hi Sister, could you check in on me')
 
+  // Help Me Now lists support people; tapping one opens a ready-to-send text.
   await page.goto('/home')
-  await expect(page.getByText('Text Sister Ruth (Mentor)')).toBeVisible()
-  await page.getByRole('button', { name: /I Need Support/ }).click()
+  await page.getByRole('button', { name: 'Help Me Now' }).click()
+  const helpSheet = page.getByRole('dialog', { name: 'I Need Support' })
+  await expect(helpSheet.getByRole('button', { name: /Sister Ruth.*Mentor.*Text/ })).toBeVisible()
+  await helpSheet.getByRole('button', { name: /Sister Ruth/ }).click()
   expect(decodeURIComponent((await openedLinks()).at(-1) ?? '')).toContain('I need support right now.')
+  await expect(helpSheet).toBeHidden()
 
-  // With two contacts, I Need Support asks who to reach.
+  // Every support person is listed; one without a mobile number gets an email.
   await page.goto('/accountability')
   await page.getByRole('button', { name: 'Add' }).click()
   await dialog.getByLabel('Name').fill('Pastor Dan')
   await dialog.getByLabel('Email (optional)').fill('dan@example.com')
   await dialog.getByRole('button', { name: 'Add Contact' }).click()
   await expect(page.getByText('Pastor Dan')).toBeVisible()
-  await page.goto('/home')
-  await page.getByRole('button', { name: /I Need Support/ }).click()
-  const chooser = page.getByRole('dialog', { name: 'Who do you want to reach?' })
+  // The "Help Me Now" app shortcut opens the same list.
+  await page.goto('/home?help=1')
+  const chooser = page.getByRole('dialog', { name: 'I Need Support' })
+  await expect(chooser.getByRole('button', { name: /Sister Ruth/ })).toBeVisible()
   await chooser.getByRole('button', { name: /Pastor Dan/ }).click()
   expect((await openedLinks()).at(-1)).toMatch(/^mailto:dan%40example\.com\?subject=I%20need%20support/)
   await page.goto('/accountability')
@@ -461,6 +472,14 @@ test('group chat: join with a chosen name, send, reply, like, delete, leave', as
   await expect(log).toBeVisible()
   await expect(log.getByText('You joined the group')).toBeVisible()
   await expect(log.getByText('Be the first to say hello')).toBeVisible()
+
+  // The message bar sits right on the tab bar (no gap), even with few messages.
+  const gap = await page.evaluate(() => {
+    const bar = document.querySelector('textarea[aria-label="Message the group"]')!.closest('form')!
+    const tabs = document.querySelector('nav[aria-label="Main"]')!
+    return Math.abs(tabs.getBoundingClientRect().top - bar.getBoundingClientRect().bottom)
+  })
+  expect(gap).toBeLessThanOrEqual(1)
 
   // Send
   const box = page.getByRole('textbox', { name: 'Message the group' })
