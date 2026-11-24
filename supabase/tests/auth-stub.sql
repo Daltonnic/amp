@@ -12,3 +12,6 @@ grant usage on schema public to anon, authenticated, service_role;
 -- Mirror current Supabase defaults: API roles get NO data privileges on new
 -- tables, so the migrations must grant them explicitly.
 alter default privileges in schema public grant truncate, references, trigger on tables to anon, authenticated, service_role;
+
+-- Supabase creates this publication for Realtime.
+create publication supabase_realtime;

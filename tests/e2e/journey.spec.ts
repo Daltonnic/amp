@@ -219,7 +219,8 @@ test('spouse: track-specific content, resources, identity, library, accountabili
   await page.getByRole('button', { name: 'Done' }).click()
 
   // Resources default to the user's track; the tab survives opening an article.
-  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Resources' }).click()
+  await page.getByRole('button', { name: 'More sections' }).click()
+  await page.getByRole('link', { name: 'Resources' }).click()
   await expect(page.getByRole('tab', { name: 'Spouses' })).toHaveAttribute('aria-selected', 'true')
   await page.getByRole('button', { name: /Understanding Betrayal Trauma/ }).click()
   await page.getByRole('button', { name: /This Is Not Your Fault/ }).click()
@@ -347,7 +348,7 @@ test('settings: PIN lock, theme, legacy links, account deletion', async ({ page 
   await expect(page).toHaveURL(/\/triggers\?view=new$/)
 
   await page.goto('/settings')
-  await page.getByLabel('Display Name').fill('Mark')
+  await page.getByLabel('First name', { exact: true }).fill('Mark')
   await page.getByRole('button', { name: 'Save Settings' }).click()
   await page.goto('/home')
   await expect(page.getByText(/, Mark$/)).toBeVisible()
@@ -426,6 +427,86 @@ test('woman in recovery: her own wording and photos, and the one-tap question', 
   await expect(page.getByRole('heading', { name: 'One quick question' })).toBeHidden()
   await page.goto('/journal')
   await expect(background(page)).toHaveAttribute('src', /quiet-reflection/)
+
+  expect(errors).toEqual([])
+})
+
+test('group chat: join with a chosen name, send, reply, like, delete, leave', async ({ page }) => {
+  const errors = watchErrors(page)
+  await onboard(page, 'men', 'man')
+
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Group' }).click()
+  await expect(page.getByRole('heading', { name: 'Men in Recovery' })).toBeVisible()
+  await expect(background(page)).toHaveAttribute('src', /sunset-study/)
+
+  // Choose how your name shows; Join waits for a name and the guidelines.
+  const join = page.getByRole('button', { name: 'Join the group' })
+  await expect(join).toBeDisabled()
+  await page.getByLabel('First name', { exact: true }).fill('David')
+  await page.getByLabel(/Last name/).fill('Miller')
+  const preview = page.getByText('Others will see:')
+  await expect(preview).toContainText('David M.')
+  await page.getByRole('radio', { name: /Initials only/ }).check()
+  await expect(preview).toContainText('D.M.')
+  await page.getByRole('radio', { name: /A nickname/ }).check()
+  await expect(preview).toContainText('add your name above')
+  await page.getByLabel('Nickname', { exact: true }).fill('Steady')
+  await expect(preview).toContainText('Steady')
+  await page.getByRole('radio', { name: /First name and last initial/ }).check()
+  await expect(join).toBeDisabled()
+  await page.getByRole('checkbox', { name: 'I agree to follow these guidelines' }).check()
+  await join.click()
+
+  const log = page.getByRole('log', { name: 'Men in Recovery messages' })
+  await expect(log).toBeVisible()
+  await expect(log.getByText('You joined the group')).toBeVisible()
+  await expect(log.getByText('Be the first to say hello')).toBeVisible()
+
+  // Send
+  const box = page.getByRole('textbox', { name: 'Message the group' })
+  const send = page.getByRole('button', { name: 'Send' })
+  await expect(send).toBeDisabled()
+  await box.fill('Day 30 today. Grateful for this group.')
+  await send.click()
+  await expect(log.getByText('Day 30 today. Grateful for this group.')).toBeVisible()
+  await expect(box).toHaveValue('')
+
+  // Reply
+  await log.getByRole('button', { name: /^Your message at .*Show options$/ }).first().click()
+  await page.getByRole('button', { name: 'Reply', exact: true }).click()
+  await expect(page.getByText('Replying to You')).toBeVisible()
+  await box.fill('And grateful for each of you.')
+  await send.click()
+  await expect(log.getByText('And grateful for each of you.')).toBeVisible()
+  await expect(page.getByText('Replying to You')).toBeHidden()
+
+  // Like
+  await log.getByRole('button', { name: /^Your message at .*Show options$/ }).first().click()
+  await page.getByRole('button', { name: 'Like', exact: true }).click()
+  await expect(log.getByRole('button', { name: 'Unlike (1 like)' })).toBeVisible()
+
+  // Delete
+  await log.getByRole('button', { name: /^Your message at .*Show options$/ }).last().click()
+  await page.getByRole('button', { name: 'Delete message' }).click()
+  await page.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(log.getByText('This message was deleted')).toBeVisible()
+  await expect(log.getByText('And grateful for each of you.')).toBeHidden()
+
+  // Members
+  await page.getByRole('button', { name: /Men in Recovery, 1 member/ }).click()
+  const members = page.getByRole('list', { name: 'Members' })
+  await expect(members.getByText('David M.')).toBeVisible()
+  await expect(members.getByText('You', { exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  // Settings: your group, and leaving it.
+  await page.goto('/settings')
+  await expect(page.getByText('Your group')).toBeVisible()
+  await page.getByRole('button', { name: 'Leave group' }).click()
+  await page.getByRole('button', { name: 'Leave group' }).last().click()
+  await expect(page.getByText('Your group')).toBeHidden()
+  await page.goto('/group')
+  await expect(page.getByRole('button', { name: 'Join the group' })).toBeVisible()
 
   expect(errors).toEqual([])
 })

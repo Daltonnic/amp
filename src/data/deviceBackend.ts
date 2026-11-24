@@ -42,6 +42,19 @@ function deviceTable<K extends TableName>(name: K): TableApi<Tables[K]> {
       for (const [col, value] of Object.entries(query.gte ?? {})) {
         rows = rows.filter((r) => compare((r as unknown as Record<string, unknown>)[col], value) >= 0)
       }
+      if (name === 'profiles') {
+        // Profiles saved before newer columns existed.
+        rows = rows.map(
+          (r) =>
+            ({
+              gender: null,
+              last_name: '',
+              name_display: 'first_last_initial',
+              nickname: '',
+              ...(r as object),
+            }) as Row,
+        )
+      }
       if (name === 'library_articles') {
         rows = rows.filter((r) => (r as Tables['library_articles']).published)
       }

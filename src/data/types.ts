@@ -8,6 +8,8 @@ export type Track = 'men' | 'spouse'
 /** Asked during account setup. Null on profiles made before the question existed. */
 export type Gender = 'man' | 'woman'
 
+export type NameDisplay = 'first_last_initial' | 'first' | 'initials' | 'full' | 'nickname'
+
 /** Base44: UserProfile */
 export interface Profile {
   id: string
@@ -16,7 +18,12 @@ export interface Profile {
   gender: Gender | null
   reason: string
   primary_needs: string[]
+  /** First name. Private greeting ("Good morning, David") and the start of the group name. */
   display_name: string
+  last_name: string
+  /** How the name shows to others in the group. See src/lib/names.ts. */
+  name_display: NameDisplay
+  nickname: string
   daily_reminders: boolean
   /** "HH:MM" (Postgres returns "HH:MM:SS"; both are accepted). */
   reminder_time: string
@@ -166,4 +173,48 @@ export type TableName = keyof Tables
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
+}
+
+// ---------------------------------------------------------------------------
+// Group chat (supabase/migrations/*_group_chat.sql)
+// ---------------------------------------------------------------------------
+
+export type GroupRoomId = 'men-recovery' | 'women-recovery' | 'men-betrayed' | 'women-betrayed'
+
+export interface GroupMember {
+  user_id: string
+  room: GroupRoomId
+  /** The name the group sees, derived on the server from the profile. */
+  display_name: string
+  role: 'member' | 'moderator'
+  joined_at: string
+  agreed_at: string
+  last_read_at: string
+  left_at: string | null
+}
+
+export interface GroupMessage {
+  id: string
+  room: GroupRoomId
+  user_id: string
+  /** "system" rows are "joined the group" style notices. */
+  kind: 'text' | 'system'
+  body: string
+  reply_to: string | null
+  liked_by: string[]
+  created_at: string
+  deleted_at: string | null
+  deleted_by: string | null
+}
+
+export interface GroupReport {
+  id: string
+  message_id: string
+  room: GroupRoomId
+  author_id: string
+  body_snapshot: string
+  reporter: string
+  reason: string
+  created_at: string
+  resolved_at: string | null
 }

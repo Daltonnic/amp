@@ -15,6 +15,7 @@ const Home = lazy(() => import('@/pages/Home'))
 const CheckIn = lazy(() => import('@/pages/CheckIn'))
 const Grounding = lazy(() => import('@/pages/Grounding'))
 const Journal = lazy(() => import('@/pages/Journal'))
+const Group = lazy(() => import('@/pages/Group'))
 const Resources = lazy(() => import('@/pages/Resources'))
 const Library = lazy(() => import('@/pages/Library'))
 const TriggerAwareness = lazy(() => import('@/pages/TriggerAwareness'))
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
           { path: paths.checkIn, element: <CheckIn /> },
           { path: paths.grounding, element: <Grounding /> },
           { path: paths.journal, element: <Journal /> },
+          { path: paths.group, element: <Group /> },
           { path: paths.resources, element: <Resources /> },
           { path: paths.library, element: <Library /> },
           { path: paths.triggers, element: <TriggerAwareness /> },

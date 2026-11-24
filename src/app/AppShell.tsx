@@ -1,13 +1,14 @@
 import { Suspense, useEffect, useState } from 'react'
 import { Navigate, Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router'
 import { App as CapApp } from '@capacitor/app'
-import { Keyboard } from '@capacitor/keyboard'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { WifiOff } from 'lucide-react'
 import { PageBackground } from '@/components/PageBackground'
 import { TabBar } from '@/components/TabBar'
+import { useGroupLive, useGroupStatus, useMyRoom } from '@/data/groupQueries'
 import { useProfile } from '@/data/queries'
 import { useAuth } from '@/lib/auth'
+import { useKeyboardOpen } from '@/lib/keyboard'
 import { isNative, platform } from '@/lib/native'
 import { onReminderTapped } from '@/lib/reminders'
 import { paths } from './routes'
@@ -40,25 +41,6 @@ function useOnline() {
 }
 
 /** Hides the tab bar while the on-screen keyboard is up (e.g. writing a journal entry). */
-function useKeyboardOpen() {
-  const [open, setOpen] = useState(false)
-  useEffect(() => {
-    if (isNative) {
-      const handles = [
-        Keyboard.addListener('keyboardWillShow', () => setOpen(true)),
-        Keyboard.addListener('keyboardWillHide', () => setOpen(false)),
-      ]
-      return () => handles.forEach((h) => void h.then((x) => x.remove()))
-    }
-    const vv = window.visualViewport
-    if (!vv) return
-    const onResize = () => setOpen(vv.height < window.innerHeight * 0.75)
-    vv.addEventListener('resize', onResize)
-    return () => vv.removeEventListener('resize', onResize)
-  }, [])
-  return open
-}
-
 /** Android back button, reminder taps and splash screen. */
 function NativeBridge() {
   const navigate = useNavigate()
@@ -113,8 +95,17 @@ export function TabsLayout() {
         </Suspense>
       </main>
       {!keyboardOpen && <TabBar />}
+      <GroupLive />
     </div>
   )
+}
+
+/** Live group messages and the unread badge, while the app is open. */
+function GroupLive() {
+  const room = useMyRoom()
+  const status = useGroupStatus(room)
+  useGroupLive(room, Boolean(status.data?.member))
+  return null
 }
 
 function LoadError({ onRetry }: { onRetry: () => void }) {

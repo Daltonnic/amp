@@ -8,6 +8,7 @@ import {
   House,
   Library,
   Menu,
+  MessagesSquare,
   Settings,
   Shield,
   Sparkles,
@@ -17,6 +18,7 @@ import type { LucideIcon } from 'lucide-react'
 import { paths } from '@/app/routes'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/dialog'
 import { DialogDescription, DialogTitle } from '@radix-ui/react-dialog'
+import { useGroupBadge } from '@/data/groupQueries'
 import { useLibrary } from '@/data/queries'
 import { hapticTap } from '@/lib/native'
 import { cn } from '@/lib/utils'
@@ -26,10 +28,11 @@ const TABS: { name: string; to: string; icon: LucideIcon }[] = [
   { name: 'Check-In', to: paths.checkIn, icon: ClipboardCheck },
   { name: 'Grounding', to: paths.grounding, icon: Shield },
   { name: 'Journal', to: paths.journal, icon: BookOpen },
-  { name: 'Resources', to: paths.resources, icon: Library },
+  { name: 'Group', to: paths.group, icon: MessagesSquare },
 ]
 
 const MORE: { name: string; to: string; icon: LucideIcon }[] = [
+  { name: 'Resources', to: paths.resources, icon: Library },
   { name: 'Library', to: paths.library, icon: BookMarked },
   { name: 'Trigger Awareness', to: paths.triggers, icon: CircleAlert },
   { name: 'Identity & Scripture', to: paths.identity, icon: Sparkles },
@@ -45,6 +48,7 @@ export function TabBar() {
   const location = useLocation()
   const navigate = useNavigate()
   const library = useLibrary()
+  const unread = useGroupBadge()
   // The Library is admin-published content. Until at least one article is
   // published it stays out of the menu rather than showing an empty section
   // (App Review rejects placeholder content).
@@ -77,7 +81,15 @@ export function TabBar() {
           >
             {({ isActive }) => (
               <>
-                <Icon className="size-5" strokeWidth={isActive ? 2.5 : 1.75} aria-hidden="true" />
+                <span className="relative">
+                  <Icon className="size-5" strokeWidth={isActive ? 2.5 : 1.75} aria-hidden="true" />
+                  {to === paths.group && unread > 0 && !isActive && (
+                    <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-destructive px-1 text-center text-[10px] font-semibold leading-4 text-destructive-foreground">
+                      {unread > 99 ? '99+' : unread}
+                      <span className="sr-only"> unread</span>
+                    </span>
+                  )}
+                </span>
                 <span>{name}</span>
               </>
             )}

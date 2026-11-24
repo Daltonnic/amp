@@ -18,17 +18,18 @@ Every screen from the Base44 app, with its original wording, Scripture, prayers 
 | -------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Sign in              | `/sign-in`        | Email + password, create account, forgot password                                                                   |
 | Reset password       | `/reset-password` | Opened from the reset email; also Settings → Change Password                                                        |
-| Onboarding           | `/welcome`        | Track (men / betrayed spouse), reason, needs, reminders                                                             |
+| Onboarding           | `/welcome`        | Man or woman, track (recovery / betrayed spouse), reason, needs, reminders                                          |
 | Home                 | `/home`           | Encouragement, quick actions, **I Need Support** (opens a ready-to-send text), weekly insights chart, Today's Focus |
 | Daily Check-In       | `/check-in`       | 6 steps, different for each track                                                                                   |
 | Grounding Tools      | `/grounding`      | Breathing, body grounding, 5-4-3-2-1, prayer, truths, Scripture, reassurance (spouse)                               |
 | Journal              | `/journal`        | Templates, guided prompts, free writing, edit/delete, auto-saved drafts                                             |
+| Group                | `/group`          | GroupMe-style chat, one of four separate groups per person (see [docs/GROUP_CHAT.md](docs/GROUP_CHAT.md))           |
 | Resources            | `/resources`      | Men's and spouses' articles                                                                                         |
 | Library              | `/library`        | Admin-published articles (from the database); appears in the menu once at least one is published                    |
 | Trigger Awareness    | `/triggers`       | Trigger log + AI **Grounding Guide** chat                                                                           |
 | Identity & Scripture | `/identity`       | Truths and Scripture meditation                                                                                     |
 | Accountability       | `/accountability` | Trusted contacts; request a check-in, text, call                                                                    |
-| Settings             | `/settings`       | Profile, reminders, appearance, PIN/Face ID lock, sign out, delete account                                          |
+| Settings             | `/settings`       | Name and how it shows, man/woman, group, reminders, appearance, PIN/Face ID lock, sign out, delete account          |
 | Privacy Policy       | `/privacy`        | Public page (required by both stores)                                                                               |
 
 Old Base44 links (`/CheckIn`, `/TriggerAwareness`, `/IdentityFormation`, `/Onboarding`, …) redirect to the new paths.

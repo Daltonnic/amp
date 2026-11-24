@@ -6,6 +6,7 @@ export const paths = {
   checkIn: '/check-in',
   grounding: '/grounding',
   journal: '/journal',
+  group: '/group',
   resources: '/resources',
   library: '/library',
   triggers: '/triggers',

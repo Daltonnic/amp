@@ -52,6 +52,8 @@ const ROUTE_PHOTOS: Record<string, Partial<Record<Audience, Photo>>> = {
   [paths.grounding]: NATURE,
   [paths.identity]: NATURE,
   [paths.triggers]: NATURE,
+  // A text-heavy screen, so a calm photo without faces.
+  [paths.group]: NATURE,
   [paths.checkIn]: { woman: 'reflection' },
   [paths.journal]: { woman: 'reflection' },
   [paths.resources]: { man: 'counselMen', woman: 'reflection', spouse: 'counsel' },

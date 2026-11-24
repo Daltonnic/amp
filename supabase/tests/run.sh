@@ -15,3 +15,4 @@ psql=(psql -h "$tmp" -p 54329 -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${psql[@]}" -f "$here/auth-stub.sql"
 for f in "$here"/../migrations/*.sql; do "${psql[@]}" -f "$f"; done
 "${psql[@]}" -f "$here/rls.sql"
+"${psql[@]}" -f "$here/chat.sql"

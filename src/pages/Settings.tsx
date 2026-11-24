@@ -38,6 +38,9 @@ import { backend } from '@/data'
 import { useDeleteProfile, useProfile, useUpdateProfile } from '@/data/queries'
 import type { Gender, Profile } from '@/data/types'
 import { trackLabel } from '@/lib/audience'
+import { NameFields, namePartsOf, profileNamePatch } from '@/components/NameFields'
+import { GROUP_ROOMS, roomFor } from '@/content/group'
+import { useBlockMember, useGroupBlocks, useGroupMembers, useGroupStatus, useLeaveGroup, useMyRoom } from '@/data/groupQueries'
 import {
   biometryInfo,
   clearLock,
@@ -64,13 +67,18 @@ export default function Settings() {
 function SettingsForm({ profile: p }: { profile: Profile }) {
   const update = useUpdateProfile()
   const { state } = useAuth()
-  const [displayName, setDisplayName] = useState(p.display_name)
+  const [name, setName] = useState(() => namePartsOf(p))
   const [gender, setGender] = useState<Gender | null>(p.gender ?? null)
   const [reminders, setReminders] = useState(p.daily_reminders)
   const [reminderTime, setReminderTime] = useState(p.reminder_time.slice(0, 5))
 
+  const nameChanged = JSON.stringify(profileNamePatch(name)) !== JSON.stringify(profileNamePatch(namePartsOf(p)))
+  const currentRoom = useMyRoom()
+  const groupStatus = useGroupStatus(currentRoom)
+  const inGroup = Boolean(groupStatus.data?.member)
+  const movesGroup = inGroup && currentRoom !== roomFor(p.track, gender)
   const dirty =
-    displayName !== p.display_name ||
+    nameChanged ||
     gender !== (p.gender ?? null) ||
     reminders !== p.daily_reminders ||
     reminderTime !== p.reminder_time.slice(0, 5)
@@ -80,7 +88,7 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
       await update.mutateAsync({
         id: p.id,
         patch: {
-          display_name: displayName.trim(),
+          ...profileNamePatch(name),
           gender,
           daily_reminders: reminders,
           reminder_time: reminderTime,
@@ -105,19 +113,7 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
       <PageHeader title="Settings" subtitle="Manage your experience." />
 
       <Section title="Profile">
-        <div className="space-y-1.5">
-          <Label htmlFor="display-name" className="text-xs text-muted-foreground">
-            Display Name
-          </Label>
-          <Input
-            id="display-name"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your name (optional)"
-            maxLength={80}
-            autoComplete="given-name"
-          />
-        </div>
+        <NameFields value={name} onChange={setName} />
         <div className="space-y-1.5">
           <p id="gender-label" className="text-xs text-muted-foreground">
             I am a
@@ -134,7 +130,12 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
           </Tabs>
           {!gender && (
             <p className="text-xs text-muted-foreground">
-              Choose one so we can show you the right words and pictures.
+              Choose one so we can show you the right words, pictures and group.
+            </p>
+          )}
+          {movesGroup && currentRoom && (
+            <p className="text-xs font-medium text-destructive">
+              Saving this takes you out of {GROUP_ROOMS[currentRoom].name}.
             </p>
           )}
         </div>
@@ -169,6 +170,8 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
         {update.isPending ? 'Saving...' : 'Save Settings'}
       </Button>
 
+      {inGroup && currentRoom && <GroupSection room={currentRoom} />}
+
       <AppearanceSection />
       <SecuritySection />
 
@@ -200,6 +203,72 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
 
       <AccountSection profileId={p.id} />
     </Screen>
+  )
+}
+
+function GroupSection({ room }: { room: NonNullable<ReturnType<typeof useMyRoom>> }) {
+  const members = useGroupMembers(room, true)
+  const blocks = useGroupBlocks(true)
+  const block = useBlockMember()
+  const leave = useLeaveGroup(room)
+  const [confirmLeave, setConfirmLeave] = useState(false)
+  const nameOf = (id: string) => members.data?.find((m) => m.user_id === id)?.display_name ?? 'Former member'
+  const blocked = blocks.data ?? []
+
+  return (
+    <Section title="Group">
+      <Row title="Your group" subtitle={GROUP_ROOMS[room].name} />
+      <div className="space-y-2">
+        <p className="text-xs text-muted-foreground">Blocked people</p>
+        {blocked.length === 0 ? (
+          <p className="text-sm text-muted-foreground">You haven’t blocked anyone.</p>
+        ) : (
+          <ul className="divide-y rounded-lg border">
+            {blocked.map((id) => (
+              <li key={id} className="flex items-center justify-between gap-3 px-3 py-1">
+                <span className="truncate text-sm text-foreground">{nameOf(id)}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    block.mutate({ userId: id, block: false }, { onError: (err) => toast.error(errorMessage(err)) })
+                  }
+                >
+                  Unblock
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {confirmLeave ? (
+        <div className="space-y-3 rounded-lg border p-3">
+          <p className="text-sm text-foreground">Leave the group? You can join again any time from the Group tab.</p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setConfirmLeave(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              disabled={leave.isPending}
+              onClick={() =>
+                leave.mutate(undefined, {
+                  onSuccess: () => toast.success('You left the group.'),
+                  onError: (err) => toast.error(errorMessage(err)),
+                })
+              }
+            >
+              Leave group
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button variant="outline" className="w-full" onClick={() => setConfirmLeave(true)}>
+          Leave group
+        </Button>
+      )}
+    </Section>
   )
 }
 

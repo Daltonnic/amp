@@ -11,7 +11,7 @@ import { paths } from '@/app/routes'
  * which is this page: https://<your-domain>/privacy
  */
 
-const UPDATED = 'November 20, 2026'
+const UPDATED = 'November 24, 2026'
 
 function H({ children }: { children: ReactNode }) {
   return <h2 className="mb-2 mt-6 font-display text-lg font-semibold text-foreground">{children}</h2>
@@ -40,14 +40,22 @@ export default function Privacy() {
               password. Passwords are stored only as secure hashes by our sign-in provider.
             </li>
             <li>
-              Your onboarding answers: your track, what brought you here, what you need most, and an optional
-              display name.
+              Your onboarding answers: whether you are a man or a woman, your track, what brought you here,
+              and what you need most.
+            </li>
+            <li>
+              Your name, if you add it, and how you choose to show it to others (for example "David M.",
+              initials, or a nickname).
             </li>
             <li>
               What you choose to record: daily check-ins, journal entries, trigger logs, and which grounding
               tools you use.
             </li>
             <li>Accountability contacts you add (name, email, phone, relationship).</li>
+            <li>
+              If you join your group: the messages you post, the messages you like, people you block, and
+              messages you report.
+            </li>
           </ul>
           <p>
             We do not use analytics, advertising, or tracking tools, and we do not collect your location or
@@ -63,6 +71,33 @@ export default function Privacy() {
             Some settings stay only on your device: your app PIN (stored as a one-way hash, never sent to us),
             reminder schedule, theme, and unsaved journal drafts.
           </p>
+
+          <H>Your group</H>
+          <p>
+            There are four separate groups: men in recovery, women in recovery, men healing from betrayal, and
+            women healing from betrayal. You can only join, see and post in the one that matches your
+            profile. Joining is optional.
+          </p>
+          <ul className="space-y-1">
+            <li>
+              Members of your group see the messages you post, which messages you like, the name you chose to
+              show, and when you joined. They never see your email, your check-ins, journal or anything else
+              in the app.
+            </li>
+            <li>
+              Moderators of your group can remove messages and remove people who break the group guidelines.
+              When you report a message, moderators see the message and your reason, but not who reported it.
+            </li>
+            <li>
+              Blocking someone hides their messages from you; they are not told. You can unblock them in
+              Settings.
+            </li>
+            <li>
+              You can delete any message you posted, or leave the group, at any time. Deleting your account
+              also deletes every message you posted.
+            </li>
+            <li>The group is text only: no photos, and links are never turned into clickable links.</li>
+          </ul>
 
           <H>When information leaves the app</H>
           <ul className="space-y-1">
@@ -82,7 +117,8 @@ export default function Privacy() {
 
           <H>Your choices</H>
           <ul className="space-y-1">
-            <li>Edit or delete journal entries and contacts at any time.</li>
+            <li>Edit or delete journal entries, contacts and group messages at any time.</li>
+            <li>Change how your name shows, or leave your group, in Settings.</li>
             <li>
               Delete your account in <strong>Settings → Delete Account & All Data</strong>. This permanently
               and immediately erases your account and every record linked to it.
