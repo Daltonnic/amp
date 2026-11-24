@@ -558,21 +558,30 @@ test('notifications: one-tap button on Home, toggles in Settings', async ({ page
   const errors = watchErrors(page)
   await onboard(page, 'men', 'man')
 
-  const card = page.getByRole('heading', { name: 'Get notified when your group posts' })
+  const card = page.getByRole('heading', { name: 'Get notified about your group' })
   await expect(card).toBeVisible()
-  await expect(page.getByText(/never the message itself/)).toBeVisible()
+  await expect(page.getByText(/Group messages and meeting reminders/)).toBeVisible()
   await page.getByRole('button', { name: 'Turn on notifications' }).click()
   await expect(page.getByText(/Notifications are on/)).toBeVisible()
   await expect(card).toBeHidden()
 
   await page.goto('/settings')
   const pushSwitch = page.getByRole('switch', { name: 'Push notifications' })
-  const previewSwitch = page.getByRole('switch', { name: 'Show message text in notifications' })
+  const previewSwitch = page.getByRole('switch', { name: 'Show details in notifications' })
   await expect(pushSwitch).toBeChecked()
   await expect(previewSwitch).not.toBeChecked()
   await expect(page.getByText(/Off for privacy/)).toBeVisible()
   await previewSwitch.click()
   await expect(previewSwitch).toBeChecked()
+
+  // Everything, messages only, or meetings only.
+  await expect(page.getByRole('tab', { name: 'Everything' })).toHaveAttribute('aria-selected', 'true')
+  await page.getByRole('tab', { name: 'Meetings' }).click()
+  await expect(page.getByText('Only meeting reminders, no group messages.')).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('tab', { name: 'Meetings' })).toHaveAttribute('aria-selected', 'true')
+  await page.getByRole('tab', { name: 'Messages' }).click()
+  await expect(page.getByText('Only group messages, no meeting reminders.')).toBeVisible()
   await pushSwitch.click()
   await expect(pushSwitch).not.toBeChecked()
   await expect(previewSwitch).toBeHidden()
@@ -678,6 +687,83 @@ test('leaders: page for leaders, and everyone else asks to join', async ({ page 
   await expect(page.getByRole('heading', { name: 'Your request has been sent' })).toBeVisible()
   await page.getByRole('button', { name: 'More sections' }).click()
   await expect(page.getByRole('link', { name: 'Leaders' })).toHaveCount(0)
+
+  expect(errors).toEqual([])
+})
+
+test('calendar: leaders add meetings with reminders; each group sees its own', async ({ page }) => {
+  const errors = watchErrors(page)
+  await onboard(page, 'men', 'man')
+
+  // On this device you lead: More → Calendar, then Add event.
+  await page.getByRole('button', { name: 'More sections' }).click()
+  await page.getByRole('link', { name: 'Calendar' }).click()
+  await expect(page.getByRole('heading', { name: 'Calendar', level: 1 })).toBeVisible()
+  await expect(page.getByText('No meetings yet.')).toBeVisible()
+  await page.getByRole('button', { name: 'Add event' }).click()
+
+  const form = page.getByRole('dialog', { name: 'Add an event' })
+  await form.getByLabel('Title').fill('Tuesday Night Group')
+  // Your own group is chosen already.
+  await expect(form.getByRole('button', { name: 'Men in Recovery', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  const tomorrow = await page.evaluate(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })
+  await form.getByLabel('Date').fill(tomorrow)
+  await form.getByLabel('Starts at').fill('19:00')
+  await form.getByLabel('How long').selectOption('90')
+  await form.getByLabel('How often').selectOption('weekly')
+  await form.getByLabel('Where (optional)').fill('https://meet.example.org/tuesday')
+  // Suggested reminders are preset; add 15 minutes before.
+  await expect(form.getByRole('button', { name: '1 day before', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(form.getByRole('button', { name: '1 hour before', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await form.getByRole('button', { name: '15 minutes before', exact: true }).click()
+  await form.getByRole('button', { name: 'Add event', exact: true }).click()
+  await expect(form).toBeHidden()
+
+  // It shows up, with its details.
+  const upcoming = page
+    .getByRole('region', { name: 'Coming up' })
+    .or(page.locator('section', { has: page.getByRole('heading', { name: 'Coming up' }) }))
+  await expect(upcoming.getByRole('button', { name: /Tuesday Night Group/ }).first()).toBeVisible()
+  await upcoming
+    .getByRole('button', { name: /Tuesday Night Group/ })
+    .first()
+    .click()
+  const details = page.getByRole('dialog', { name: 'Tuesday Night Group' })
+  await expect(details.getByText(/7:00 – 8:30 PM/)).toBeVisible()
+  await expect(details.getByText(/^Every week on /)).toBeVisible()
+  await expect(details.getByText('Reminders: 1 day before, 1 hour before, 15 minutes before')).toBeVisible()
+  await expect(details.getByRole('link', { name: 'https://meet.example.org/tuesday' })).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  // Home shows the next meeting.
+  await page.goto('/home')
+  await expect(page.getByRole('link', { name: /Next meeting.*Tuesday Night Group/ })).toBeVisible()
+
+  // The group chat has a calendar button.
+  await page.goto('/group')
+  await expect(page.getByRole('link', { name: 'Group calendar' })).toBeVisible()
+
+  // Someone who isn't a leader sees the meeting but can't add events.
+  await page.evaluate(() => localStorage.setItem('amp.device.leaders', '[]'))
+  await page.goto('/calendar')
+  await expect(page.getByText('Meetings for Men in Recovery')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Tuesday Night Group/ }).first()).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Add event' })).toHaveCount(0)
+
+  // A leader can delete it.
+  await page.evaluate(() => localStorage.removeItem('amp.device.leaders'))
+  await page.goto('/calendar')
+  await page
+    .getByRole('button', { name: /Tuesday Night Group/ })
+    .first()
+    .click()
+  await page.getByRole('button', { name: 'Delete' }).click()
+  await page.getByRole('button', { name: 'Delete' }).last().click()
+  await expect(page.getByText('No meetings yet.')).toBeVisible()
 
   expect(errors).toEqual([])
 })

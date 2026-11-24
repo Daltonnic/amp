@@ -10,7 +10,9 @@ import {
   type RefObject,
 } from 'react'
 import { format } from 'date-fns'
-import { ArrowDown, ArrowUp, Flag, Heart, Loader2, Users, X } from 'lucide-react'
+import { Link } from 'react-router'
+import { ArrowDown, ArrowUp, CalendarDays, Flag, Heart, Loader2, Users, X } from 'lucide-react'
+import { paths } from '@/app/routes'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/controls'
@@ -220,6 +222,13 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
             </span>
           </span>
         </button>
+        <Link
+          to={paths.calendar}
+          aria-label="Group calendar"
+          className="flex size-11 shrink-0 items-center justify-center rounded-lg text-primary transition-colors hover:bg-muted/50"
+        >
+          <CalendarDays className="size-5" aria-hidden="true" />
+        </Link>
         {isModerator && (
           <Button variant="outline" size="sm" onClick={() => setReportsOpen(true)}>
             <Flag aria-hidden="true" /> Reports

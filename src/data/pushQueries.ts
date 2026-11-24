@@ -3,17 +3,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   disablePush,
   enablePush,
-  previewEnabled,
+  pushOptions,
   pushState,
   pushSupport,
-  setPreview,
+  setPushOptions,
+  type PushOptions,
   type PushState,
 } from '@/lib/push'
 import { useMyUserId } from './groupQueries'
 
 export const pushKeys = {
   state: (userId: string | null) => ['push', 'state', userId] as const,
-  preview: (userId: string | null) => ['push', 'preview', userId] as const,
+  options: (userId: string | null) => ['push', 'options', userId] as const,
 }
 
 /** Push notifications on this device: whether they're available, on, and the controls. */
@@ -28,40 +29,39 @@ export function usePush() {
     queryFn: () => pushState(me),
     enabled: available && Boolean(me),
   })
-  const preview = useQuery({
-    queryKey: pushKeys.preview(me),
-    queryFn: previewEnabled,
+  const options = useQuery({
+    queryKey: pushKeys.options(me),
+    queryFn: pushOptions,
     enabled: state.data === 'on',
   })
 
   const enable = useMutation({
     /** Pass requestPushPermission(), called during the tap. */
-    mutationFn: (permission?: Promise<NotificationPermission>) =>
-      enablePush(preview.data ?? false, permission),
+    mutationFn: (permission?: Promise<NotificationPermission>) => enablePush({}, permission),
     onSuccess: (s: PushState) => qc.setQueryData(pushKeys.state(me), s),
   })
   const disable = useMutation({
     mutationFn: disablePush,
     onSuccess: () => qc.setQueryData<PushState>(pushKeys.state(me), 'off'),
   })
-  const changePreview = useMutation({
-    mutationFn: setPreview,
-    onMutate: (show: boolean) => {
-      const previous = qc.getQueryData<boolean>(pushKeys.preview(me))
-      qc.setQueryData(pushKeys.preview(me), show)
+  const changeOptions = useMutation({
+    mutationFn: setPushOptions,
+    onMutate: (patch: Partial<PushOptions>) => {
+      const previous = qc.getQueryData<PushOptions>(pushKeys.options(me))
+      if (previous) qc.setQueryData(pushKeys.options(me), { ...previous, ...patch })
       return { previous }
     },
-    onError: (_e, _v, ctx) => qc.setQueryData(pushKeys.preview(me), ctx?.previous),
+    onError: (_e, _v, ctx) => qc.setQueryData(pushKeys.options(me), ctx?.previous),
   })
 
   return {
     support,
     available,
     state: state.data,
-    preview: preview.data ?? false,
+    options: options.data ?? { showPreview: false, messages: true, meetings: true },
     enable,
     disable,
-    changePreview,
+    changeOptions,
     busy: enable.isPending || disable.isPending,
   }
 }

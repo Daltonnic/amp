@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { ShieldCheck, Users } from 'lucide-react'
+import { Link } from 'react-router'
+import { CalendarDays, ShieldCheck, Users } from 'lucide-react'
+import { paths } from '@/app/routes'
 import { toast } from 'sonner'
 import { NameFields, namePartsOf, profileNamePatch } from '@/components/NameFields'
 import { Button } from '@/components/ui/button'
@@ -45,10 +47,17 @@ export function JoinGroup({ room, profile }: { room: GroupRoomId; profile: Profi
         <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Users className="size-6" aria-hidden="true" />
         </span>
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="font-display text-xl font-semibold text-foreground">{info.name}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{info.description}</p>
         </div>
+        <Link
+          to={paths.calendar}
+          aria-label="Group calendar"
+          className="flex size-11 shrink-0 items-center justify-center rounded-lg text-primary transition-colors hover:bg-muted/50"
+        >
+          <CalendarDays className="size-5" aria-hidden="true" />
+        </Link>
       </header>
 
       <Card className="flex items-start gap-3 border-primary/15 bg-primary/5 p-4">

@@ -29,6 +29,7 @@ Every screen from the Base44 app, with its original wording, Scripture, prayers 
 | Trigger Awareness    | `/triggers`       | Trigger log + AI **Grounding Guide** chat                                                                                           |
 | Identity & Scripture | `/identity`       | Truths and Scripture meditation                                                                                                     |
 | Accountability       | `/accountability` | Trusted contacts; request a check-in, text, call                                                                                    |
+| Calendar             | `/calendar`       | Each group's meetings; leaders add events with repeats and reminder notifications ([docs/CALENDAR.md](docs/CALENDAR.md))            |
 | Leaders              | `/leaders`        | Leaders only: approve join requests for every group, see everyone, make or step down leaders                                        |
 | Settings             | `/settings`       | Name and how it shows, man/woman, group, reminders, appearance, PIN/Face ID lock, sign out, delete account                          |
 | Privacy Policy       | `/privacy`        | Public page (required by both stores)                                                                                               |

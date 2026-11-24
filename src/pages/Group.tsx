@@ -1,4 +1,6 @@
-import { Clock, Loader2, ShieldOff } from 'lucide-react'
+import { Link } from 'react-router'
+import { CalendarDays, Clock, Loader2, ShieldOff } from 'lucide-react'
+import { paths } from '@/app/routes'
 import { toast } from 'sonner'
 import { NotificationsPrompt } from '@/components/NotificationsPrompt'
 import { AboutYouPrompt } from '@/components/AboutYouPrompt'
@@ -92,6 +94,12 @@ function Waiting({ roomName }: { roomName: string }) {
           group safe.
         </p>
       </Card>
+      <Link
+        to={paths.calendar}
+        className="flex min-h-12 items-center justify-center gap-2 rounded-xl border bg-card text-sm font-medium text-primary"
+      >
+        <CalendarDays className="size-4" aria-hidden="true" /> See your group's meeting calendar
+      </Link>
       <NotificationsPrompt
         title="Know the moment you're in"
         description="Turn on notifications and we'll tell you when a leader approves you, even if AMP is closed."

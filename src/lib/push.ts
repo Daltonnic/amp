@@ -27,10 +27,22 @@ export type PushSupport =
 
 export type PushState = 'on' | 'off' | 'blocked'
 
+/** What this device is notified about, and how. */
+export interface PushOptions {
+  /** Show the group, name and text on the lock screen. */
+  showPreview: boolean
+  /** New messages in the group. */
+  messages: boolean
+  /** Meeting and event reminders. */
+  meetings: boolean
+}
+
 interface TestHook {
   permission: NotificationPermission
   subscribed: boolean
   preview: boolean
+  messages?: boolean
+  meetings?: boolean
 }
 declare global {
   interface Window {
@@ -112,14 +124,17 @@ async function register(row: {
   endpoint: string
   p256dh?: string
   auth?: string
-  showPreview: boolean
+  /** Choices to change; anything left out keeps what the device had. */
+  options: Partial<PushOptions>
 }) {
   const { error } = await getSupabase().rpc('push_register', {
     platform: row.platform,
     endpoint: row.endpoint,
     p256dh: row.p256dh ?? null,
     auth: row.auth ?? null,
-    show_preview: row.showPreview,
+    show_preview: row.options.showPreview ?? null,
+    notify_messages: row.options.messages ?? null,
+    notify_events: row.options.meetings ?? null,
   })
   if (error) throw new Error(error.message)
 }
@@ -151,17 +166,23 @@ export async function pushState(userId: string | null): Promise<PushState> {
 }
 
 /** Whether this device shows message text in notifications. */
-export async function previewEnabled(): Promise<boolean> {
+const DEFAULT_OPTIONS: PushOptions = { showPreview: false, messages: true, meetings: true }
+
+/** This device's notification choices. */
+export async function pushOptions(): Promise<PushOptions> {
   const f = fake()
-  if (f) return f.preview
+  if (f) return { showPreview: f.preview, messages: f.messages ?? true, meetings: f.meetings ?? true }
   const m = marker()
-  if (!m || !isCloudConfigured) return false
+  if (!m || !isCloudConfigured) return DEFAULT_OPTIONS
   const { data } = await getSupabase()
     .from('push_subscriptions')
-    .select('show_preview')
+    .select('show_preview, notify_messages, notify_events')
     .eq('endpoint', m.endpoint)
     .maybeSingle()
-  return Boolean((data as { show_preview?: boolean } | null)?.show_preview)
+  const row = data as { show_preview: boolean; notify_messages: boolean; notify_events: boolean } | null
+  return row
+    ? { showPreview: row.show_preview, messages: row.notify_messages, meetings: row.notify_events }
+    : DEFAULT_OPTIONS
 }
 
 // ---------------------------------------------------------------------------
@@ -195,7 +216,7 @@ export function requestPushPermission(): Promise<NotificationPermission> | undef
 }
 
 export async function enablePush(
-  showPreview = false,
+  options: Partial<PushOptions> = {},
   permissionRequest?: Promise<NotificationPermission>,
 ): Promise<PushState> {
   const f = fake()
@@ -203,7 +224,7 @@ export async function enablePush(
     if (f.permission === 'default') f.permission = 'granted'
     if (f.permission !== 'granted') return 'blocked'
     f.subscribed = true
-    f.preview = showPreview
+    if (options.showPreview !== undefined) f.preview = options.showPreview
     return 'on'
   }
   const userId = await currentUserId()
@@ -213,19 +234,19 @@ export async function enablePush(
     const permission = await (permissionRequest ?? Notification.requestPermission())
     if (permission !== 'granted') return permission === 'denied' ? 'blocked' : 'off'
     const reg = await serviceWorker()
-    const options = { userVisibleOnly: true, applicationServerKey: keyBytes(config.vapidPublicKey) }
+    const subscribeOptions = { userVisibleOnly: true, applicationServerKey: keyBytes(config.vapidPublicKey) }
     let sub = await reg.pushManager.getSubscription()
     // A subscription made with an older server key has to be replaced.
     const currentKey = sub?.options.applicationServerKey
     if (
       sub &&
       currentKey &&
-      new Uint8Array(currentKey).toString() !== options.applicationServerKey.toString()
+      new Uint8Array(currentKey).toString() !== subscribeOptions.applicationServerKey.toString()
     ) {
       await sub.unsubscribe()
       sub = null
     }
-    sub ??= await reg.pushManager.subscribe(options)
+    sub ??= await reg.pushManager.subscribe(subscribeOptions)
     const json = sub.toJSON()
     if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth)
       throw new Error('This browser returned an incomplete subscription.')
@@ -234,7 +255,7 @@ export async function enablePush(
       endpoint: json.endpoint,
       p256dh: json.keys.p256dh,
       auth: json.keys.auth,
-      showPreview,
+      options,
     })
     setMarker(userId, json.endpoint)
     return 'on'
@@ -255,7 +276,7 @@ export async function enablePush(
       })
     }
     const token = await nativeToken()
-    await register({ platform: platform === 'ios' ? 'ios' : 'android', endpoint: token, showPreview })
+    await register({ platform: platform === 'ios' ? 'ios' : 'android', endpoint: token, options })
     setMarker(userId, token)
     return 'on'
   }
@@ -283,14 +304,16 @@ export async function disablePush(): Promise<void> {
   }
 }
 
-export async function setPreview(show: boolean): Promise<void> {
+export async function setPushOptions(patch: Partial<PushOptions>): Promise<void> {
   const f = fake()
   if (f) {
-    f.preview = show
+    if (patch.showPreview !== undefined) f.preview = patch.showPreview
+    if (patch.messages !== undefined) f.messages = patch.messages
+    if (patch.meetings !== undefined) f.meetings = patch.meetings
     return
   }
-  // Re-registering updates the setting on this device's row.
-  await enablePush(show)
+  // Re-registering updates the choices on this device's row.
+  await enablePush(patch)
 }
 
 /**
@@ -311,14 +334,14 @@ export async function syncPush(userId: string): Promise<void> {
   }
   const json = sub.toJSON()
   if (json.endpoint !== m.endpoint && json.endpoint && json.keys?.p256dh && json.keys.auth) {
-    const showPreview = await previewEnabled()
+    const options = await pushOptions()
     await getSupabase().rpc('push_unregister', { endpoint: m.endpoint })
     await register({
       platform: 'web',
       endpoint: json.endpoint,
       p256dh: json.keys.p256dh,
       auth: json.keys.auth,
-      showPreview,
+      options,
     })
     setMarker(userId, json.endpoint)
   }

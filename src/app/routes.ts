@@ -7,6 +7,7 @@ export const paths = {
   grounding: '/grounding',
   journal: '/journal',
   group: '/group',
+  calendar: '/calendar',
   resources: '/resources',
   library: '/library',
   triggers: '/triggers',

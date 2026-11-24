@@ -18,6 +18,7 @@ import { paths } from '@/app/routes'
 import { AboutYouPrompt } from '@/components/AboutYouPrompt'
 import { FreedomBadge, FreedomCard } from '@/components/FreedomCard'
 import { InstallPrompt } from '@/components/InstallPrompt'
+import { NextMeeting } from '@/components/NextMeeting'
 import { NotificationsPrompt } from '@/components/NotificationsPrompt'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { WeeklyChart, type ChartSeries } from '@/components/WeeklyChart'
@@ -77,6 +78,7 @@ export default function Home() {
         <InstallPrompt />
         <QuickActions onHelp={() => setHelpOpen(true)} />
         <Encouragement track={track} />
+        <NextMeeting />
         <WeeklyInsights track={track} />
         <TodayCheckInCard checkIn={today.data ?? null} />
         <TodaysFocus track={track} />

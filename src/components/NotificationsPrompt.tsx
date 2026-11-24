@@ -20,8 +20,8 @@ function wasDismissed() {
 
 /** One-tap "Turn on notifications" on Home, until it's on (or dismissed on this device). */
 export function NotificationsPrompt({
-  title = 'Get notified when your group posts',
-  description = 'You’ll get a notification even when AMP is closed. It stays private: just “New message in your group”, never the message itself unless you choose.',
+  title = 'Get notified about your group',
+  description = 'Group messages and meeting reminders, even when AMP is closed. It stays private: just “New message in your group”, never the details unless you choose.',
   force = false,
 }: {
   title?: string

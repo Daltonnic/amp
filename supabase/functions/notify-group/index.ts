@@ -3,11 +3,17 @@
  * - a new group message → the other members of that group
  *   (public.push_recipients(): approved members, minus anyone who blocked the author);
  * - someone asked to join a group → every leader;
- * - a leader approved a request → that person.
+ * - a leader approved a request → that person;
+ * - a calendar reminder came due → people in that event's groups who want
+ *   meeting notifications (public.calendar_push_recipients()).
+ *
+ * Calendar reminders come from the every-minute scheduler
+ * (public.calendar_send_due_reminders).
  *
  * Called by the database through pg_net (triggers chat_messages_push and
  * chat_members_push → public.push_webhook) with a shared secret. Body:
- * { message_id } or { event: 'join_request' | 'join_approved', user_id }.
+ * { message_id }, { event: 'join_request' | 'join_approved', user_id }, or
+ * { event: 'calendar_reminder', event_id, starts_at, minutes }.
  *
  * Secrets: PUSH_WEBHOOK_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
  * VAPID_SUBJECT. Optional, for the store apps: FCM_SERVICE_ACCOUNT (JSON) and
@@ -16,6 +22,7 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { adminClient, requireEnv } from '../_shared/http.ts'
 import {
+  eventReminderNotification,
   groupNotification,
   joinRequestNotification,
   welcomeNotification,
@@ -211,6 +218,16 @@ async function joinApproved(db: SupabaseClient, userId: string) {
   )
 }
 
+async function calendarReminder(db: SupabaseClient, eventId: string, minutes: number) {
+  const { data: event } = await db.from('calendar_events').select('id, title').eq('id', eventId).maybeSingle()
+  if (!event) return { sent: 0 }
+  const recipients = await db.rpc('calendar_push_recipients', { event_id: eventId })
+  if (recipients.error) throw new Error(`calendar_push_recipients failed: ${recipients.error.message}`)
+  return deliver(db, (recipients.data ?? []) as Recipient[], (r) =>
+    eventReminderNotification({ eventId, title: event.title, minutes, preview: r.show_preview }),
+  )
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return respond(405, { error: 'POST only' })
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
@@ -218,7 +235,7 @@ Deno.serve(async (req) => {
     return respond(401, { error: 'Not allowed' })
   }
 
-  let body: { message_id?: unknown; event?: unknown; user_id?: unknown }
+  let body: { message_id?: unknown; event?: unknown; user_id?: unknown; event_id?: unknown; minutes?: unknown }
   try {
     body = (await req.json()) as typeof body
   } catch {
@@ -227,6 +244,12 @@ Deno.serve(async (req) => {
 
   const db = adminClient()
   try {
+    if (body.event === 'calendar_reminder') {
+      const eventId = String(body.event_id ?? '')
+      const minutes = Number(body.minutes)
+      if (!UUID.test(eventId) || !Number.isFinite(minutes)) return respond(400, { error: 'Bad reminder' })
+      return respond(200, await calendarReminder(db, eventId, minutes))
+    }
     if (body.event === 'join_request' || body.event === 'join_approved') {
       const userId = String(body.user_id ?? '')
       if (!UUID.test(userId)) return respond(400, { error: 'Bad user_id' })

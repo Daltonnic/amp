@@ -11,7 +11,7 @@ import { paths } from '@/app/routes'
  * which is this page: https://<your-domain>/privacy
  */
 
-const UPDATED = 'November 25, 2026'
+const UPDATED = 'November 26, 2026'
 
 function H({ children }: { children: ReactNode }) {
   return <h2 className="mb-2 mt-6 font-display text-lg font-semibold text-foreground">{children}</h2>
@@ -106,14 +106,21 @@ export default function Privacy() {
             <li>The group is text only: no photos, and links are never turned into clickable links.</li>
           </ul>
 
+          <H>Calendar</H>
+          <p>
+            Leaders post meetings and events for each group. You see the calendar for your group, and leaders
+            see all of them. Events are visible to everyone in the groups they're posted to.
+          </p>
+
           <H>Notifications</H>
           <p>
             If you turn on notifications, we store an address for your device from your browser's or phone's
-            push service (Apple, Google or Mozilla), so we can tell you when someone posts in your group. By
-            default a notification only says "New message in your group"; it shows the group, name and message
-            only if you turn on "Show message text". The content is encrypted on its way to your device. Turn
-            notifications off in Settings at any time; signing out or deleting your account removes your
-            device address.
+            push service (Apple, Google or Mozilla), so we can tell you when someone posts in your group or a
+            meeting is coming up. You choose group messages, meetings, or both. By default a notification only
+            says "New message in your group" or "A meeting starts in 1 hour"; it shows the group, names,
+            message or meeting name only if you turn on "Show details". The content is encrypted on its way to
+            your device. Turn notifications off in Settings at any time; signing out or deleting your account
+            removes your device address.
           </p>
 
           <H>When information leaves the app</H>

@@ -86,3 +86,37 @@ export function welcomeNotification(n: { roomName: string; preview: boolean }): 
     discreet: !n.preview,
   }
 }
+
+/** "starts in 1 hour", "starts in 2 days", "is starting now". */
+export function startsIn(minutes: number): string {
+  if (minutes <= 0) return 'is starting now'
+  if (minutes % 10080 === 0) return `starts in ${minutes / 10080} ${minutes === 10080 ? 'week' : 'weeks'}`
+  if (minutes % 1440 === 0) return `starts in ${minutes / 1440} ${minutes === 1440 ? 'day' : 'days'}`
+  if (minutes % 60 === 0) return `starts in ${minutes / 60} ${minutes === 60 ? 'hour' : 'hours'}`
+  return `starts in ${minutes} minutes`
+}
+
+/** A meeting reminder. Discreet by default: the meeting's name can be revealing. */
+export function eventReminderNotification(n: {
+  eventId: string
+  title: string
+  minutes: number
+  preview: boolean
+}): GroupNotification {
+  const when = startsIn(n.minutes)
+  return n.preview
+    ? {
+        title: n.title,
+        body: when === 'is starting now' ? 'Starting now' : `${when[0]!.toUpperCase()}${when.slice(1)}`,
+        url: '/calendar',
+        tag: `amp-event-${n.eventId}`,
+        discreet: false,
+      }
+    : {
+        title: 'AMP',
+        body: `A meeting ${when}`,
+        url: '/calendar',
+        tag: `amp-event-${n.eventId}`,
+        discreet: true,
+      }
+}

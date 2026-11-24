@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router'
 import {
   BookMarked,
   BookOpen,
+  CalendarDays,
   CircleAlert,
   ClipboardCheck,
   Crown,
@@ -33,6 +34,7 @@ const TABS: { name: string; to: string; icon: LucideIcon }[] = [
 ]
 
 const MORE: { name: string; to: string; icon: LucideIcon }[] = [
+  { name: 'Calendar', to: paths.calendar, icon: CalendarDays },
   { name: 'Resources', to: paths.resources, icon: Library },
   { name: 'Library', to: paths.library, icon: BookMarked },
   { name: 'Trigger Awareness', to: paths.triggers, icon: CircleAlert },

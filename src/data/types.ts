@@ -243,3 +243,50 @@ export interface LeaderPerson {
   is_leader: boolean
   created_at: string
 }
+
+// ---------------------------------------------------------------------------
+// Calendar (supabase/migrations/*_calendar.sql)
+// ---------------------------------------------------------------------------
+
+export type Repeat = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly'
+
+/** An event as leaders write it. Times are wall-clock in `timezone`. */
+export interface CalendarEvent {
+  id: string
+  rooms: GroupRoomId[]
+  title: string
+  description: string
+  location: string
+  /** "yyyy-MM-ddTHH:mm:ss" in the event's time zone. */
+  starts_local: string
+  timezone: string
+  duration_minutes: number
+  repeat: Repeat
+  /** Last day it repeats (yyyy-MM-dd), or null for no end. */
+  repeat_until: string | null
+  /** Minutes before the start to send reminders. */
+  reminders: number[]
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type CalendarEventInput = Omit<CalendarEvent, 'id' | 'created_by' | 'created_at' | 'updated_at'>
+
+/** One occurrence of an event (repeats expanded). */
+export interface CalendarOccurrence {
+  event_id: string
+  title: string
+  description: string
+  location: string
+  rooms: GroupRoomId[]
+  repeat: Repeat
+  repeat_until: string | null
+  timezone: string
+  duration_minutes: number
+  reminders: number[]
+  starts_local: string
+  /** ISO instant. */
+  starts_at: string
+  ends_at: string
+}

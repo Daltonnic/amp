@@ -273,7 +273,10 @@ function PushSettings() {
   const on = push.state === 'on'
   return (
     <>
-      <Row title="Push notifications" subtitle="New messages in your group, even when AMP is closed">
+      <Row
+        title="Push notifications"
+        subtitle="Group messages and meeting reminders, even when AMP is closed"
+      >
         <Switch
           checked={on}
           disabled={push.busy || push.state === undefined || push.state === 'blocked'}
@@ -288,21 +291,67 @@ function PushSettings() {
         </p>
       )}
       {on && (
+        <div className="space-y-1.5">
+          <p id="notify-about" className="text-xs text-muted-foreground">
+            Notify me about
+          </p>
+          <Tabs
+            value={
+              push.options.messages && push.options.meetings
+                ? 'all'
+                : push.options.meetings
+                  ? 'meetings'
+                  : push.options.messages
+                    ? 'messages'
+                    : ''
+            }
+            onValueChange={(v) =>
+              push.changeOptions.mutate(
+                { messages: v !== 'meetings', meetings: v !== 'messages' },
+                { onError: (err) => toast.error(errorMessage(err)) },
+              )
+            }
+          >
+            <TabsList className="w-full" aria-labelledby="notify-about">
+              <TabsTrigger value="all" className="flex-1">
+                Everything
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="flex-1">
+                Messages
+              </TabsTrigger>
+              <TabsTrigger value="meetings" className="flex-1">
+                Meetings
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <p className="text-xs text-muted-foreground">
+            {push.options.messages && push.options.meetings
+              ? 'Group messages and meeting reminders.'
+              : push.options.meetings
+                ? 'Only meeting reminders, no group messages.'
+                : 'Only group messages, no meeting reminders.'}
+          </p>
+        </div>
+      )}
+      {on && (
         <Row
-          title="Show message text"
+          title="Show details"
           subtitle={
-            push.preview
-              ? 'Notifications show the group, name and message.'
-              : 'Off for privacy: notifications just say “New message in your group”.'
+            push.options.showPreview
+              ? 'Notifications show the group, names, messages and meeting names.'
+              : 'Off for privacy: notifications just say “New message in your group” or “A meeting starts in 1 hour”.'
           }
         >
           <Switch
-            checked={push.preview}
-            disabled={push.changePreview.isPending}
+            checked={push.options.showPreview}
+            disabled={push.changeOptions.isPending}
             onCheckedChange={(show) =>
-              push.changePreview.mutate(show, { onError: (err) => toast.error(errorMessage(err)) })
+              push.changeOptions.mutate(
+                { showPreview: show },
+                { onError: (err) => toast.error(errorMessage(err)) },
+              )
             }
-            aria-label="Show message text in notifications"
+            aria-label="Show details in notifications"
           />
         </Row>
       )}

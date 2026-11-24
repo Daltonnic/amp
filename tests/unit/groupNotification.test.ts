@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  eventReminderNotification,
   groupNotification,
+  startsIn,
   joinRequestNotification,
   welcomeNotification,
 } from '../../supabase/functions/_shared/groupNotification'
@@ -61,5 +63,26 @@ describe('leader and welcome notifications', () => {
     expect(quiet.title).toBe('AMP')
     expect(JSON.stringify(quiet)).not.toMatch(/Women/)
     expect(quiet.url).toBe('/group')
+  })
+})
+
+describe('meeting reminders', () => {
+  it('says when the meeting starts', () => {
+    expect(startsIn(0)).toBe('is starting now')
+    expect(startsIn(15)).toBe('starts in 15 minutes')
+    expect(startsIn(60)).toBe('starts in 1 hour')
+    expect(startsIn(120)).toBe('starts in 2 hours')
+    expect(startsIn(1440)).toBe('starts in 1 day')
+    expect(startsIn(2880)).toBe('starts in 2 days')
+    expect(startsIn(10080)).toBe('starts in 1 week')
+  })
+
+  it('keeps the meeting name off the lock screen unless previews are on', () => {
+    const quiet = eventReminderNotification({ eventId: 'e1', title: 'Betrayal Healing Circle', minutes: 60, preview: false })
+    expect(quiet).toMatchObject({ title: 'AMP', body: 'A meeting starts in 1 hour', url: '/calendar' })
+    expect(JSON.stringify(quiet)).not.toMatch(/Betrayal/)
+    const full = eventReminderNotification({ eventId: 'e1', title: 'Tuesday Night Group', minutes: 1440, preview: true })
+    expect(full).toMatchObject({ title: 'Tuesday Night Group', body: 'Starts in 1 day' })
+    expect(eventReminderNotification({ eventId: 'e1', title: 'X', minutes: 0, preview: true }).body).toBe('Starting now')
   })
 })
