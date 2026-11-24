@@ -32,7 +32,7 @@ export const RESOURCES: Record<Track, ResourceCategory[]> = {
         {
           title: 'Why Emotions Matter',
           content:
-            "Many men have been taught to suppress emotions — to push through, man up, or shut it down. But emotions are signals from God. They tell you what's happening inside.\n\nWhen emotions are suppressed, they don't disappear. They go underground. And they find other outlets — often destructive ones.\n\nLearning to feel is not weakness. It is courage. It is the beginning of real change.",
+            "Many of us were taught to suppress emotions — to push through, toughen up, or shut it down. But emotions are signals from God. They tell you what's happening inside.\n\nWhen emotions are suppressed, they don't disappear. They go underground. And they find other outlets — often destructive ones.\n\nLearning to feel is not weakness. It is courage. It is the beginning of real change.",
         },
         {
           title: 'The Window of Tolerance',

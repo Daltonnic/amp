@@ -36,7 +36,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { backend } from '@/data'
 import { useDeleteProfile, useProfile, useUpdateProfile } from '@/data/queries'
-import type { Profile } from '@/data/types'
+import type { Gender, Profile } from '@/data/types'
+import { trackLabel } from '@/lib/audience'
 import {
   biometryInfo,
   clearLock,
@@ -64,11 +65,13 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
   const update = useUpdateProfile()
   const { state } = useAuth()
   const [displayName, setDisplayName] = useState(p.display_name)
+  const [gender, setGender] = useState<Gender | null>(p.gender ?? null)
   const [reminders, setReminders] = useState(p.daily_reminders)
   const [reminderTime, setReminderTime] = useState(p.reminder_time.slice(0, 5))
 
   const dirty =
     displayName !== p.display_name ||
+    gender !== (p.gender ?? null) ||
     reminders !== p.daily_reminders ||
     reminderTime !== p.reminder_time.slice(0, 5)
 
@@ -76,7 +79,12 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
     try {
       await update.mutateAsync({
         id: p.id,
-        patch: { display_name: displayName.trim(), daily_reminders: reminders, reminder_time: reminderTime },
+        patch: {
+          display_name: displayName.trim(),
+          gender,
+          daily_reminders: reminders,
+          reminder_time: reminderTime,
+        },
       })
       const result = await syncReminders(reminders, reminderTime)
       if (result === 'denied') {
@@ -110,7 +118,27 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
             autoComplete="given-name"
           />
         </div>
-        <Row title="Track" subtitle={p.track === 'spouse' ? 'Betrayed Spouse' : "Men's Formation"} />
+        <div className="space-y-1.5">
+          <p id="gender-label" className="text-xs text-muted-foreground">
+            I am a
+          </p>
+          <Tabs value={gender ?? ''} onValueChange={(v) => setGender(v as Gender)}>
+            <TabsList className="w-full" aria-labelledby="gender-label">
+              <TabsTrigger value="man" className="flex-1">
+                Man
+              </TabsTrigger>
+              <TabsTrigger value="woman" className="flex-1">
+                Woman
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {!gender && (
+            <p className="text-xs text-muted-foreground">
+              Choose one so we can show you the right words and pictures.
+            </p>
+          )}
+        </div>
+        <Row title="Track" subtitle={trackLabel(p.track, gender)} />
         {state.status === 'signed-in' && state.email && <Row title="Signed in as" subtitle={state.email} />}
       </Section>
 

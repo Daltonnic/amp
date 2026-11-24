@@ -8,8 +8,9 @@ import { TapCard } from '@/components/ui/card'
 import { Badge, Skeleton, Tabs, TabsList, TabsTrigger } from '@/components/ui/controls'
 import { Input } from '@/components/ui/input'
 import { LIBRARY_CATEGORIES, LIBRARY_CATEGORY_ORDER } from '@/content/library'
-import { useLibrary } from '@/data/queries'
+import { useLibrary, useProfile } from '@/data/queries'
 import type { LibraryArticle, LibraryCategory } from '@/data/types'
+import { recoveryTabLabel } from '@/lib/audience'
 import { cn } from '@/lib/utils'
 
 type TrackFilter = 'both' | 'men' | 'spouse'
@@ -20,6 +21,7 @@ export default function Library() {
   const back = useBack(paths.library)
   const [query, setQuery] = useState('')
   const [track, setTrack] = useState<TrackFilter>('both')
+  const recoveryLabel = recoveryTabLabel(useProfile().data)
   const [category, setCategory] = useState<LibraryCategory | null>(null)
   const articles = useMemo(() => library.data ?? [], [library.data])
 
@@ -98,7 +100,7 @@ export default function Library() {
               All
             </TabsTrigger>
             <TabsTrigger value="men" className="flex-1">
-              Men
+              {recoveryLabel}
             </TabsTrigger>
             <TabsTrigger value="spouse" className="flex-1">
               Spouses

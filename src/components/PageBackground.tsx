@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router'
 import { paths } from '@/app/routes'
 import { useProfile } from '@/data/queries'
-import type { Track } from '@/data/types'
+import { audienceFor, type Audience } from '@/lib/audience'
 import { useAuth } from '@/lib/auth'
 
 /**
@@ -9,54 +9,74 @@ import { useAuth } from '@/lib/auth'
  * theme's background color (navy in dark mode, soft grey-white in light), so
  * it reads as atmosphere and never competes with the text.
  *
- * The men's track (and anyone whose track isn't known yet) never sees a
- * photo of a woman on her own, or the photo of someone scrolling a phone.
- * Family pictures (the married couple meeting with their pastor) are fine.
- * The spouse track uses the full set.
+ * Who sees what:
+ * - a man working on his own recovery: men or nature
+ * - a woman working on her own recovery: women or nature
+ * - a betrayed spouse (man or woman): family, nature or faith-building
+ * - anyone not known yet (signed out, setting up): nature only
  */
 
+/** What a photo shows, which decides who may see it. */
+type Subject = 'nature' | 'men' | 'women' | 'family' | 'faith'
+
 const PHOTOS = {
-  sunset: { src: '/backgrounds/sunset-study.webp', position: '22% 50%' },
-  reflection: { src: '/backgrounds/quiet-reflection.webp', position: '30% 50%' },
-  counsel: { src: '/backgrounds/pastoral-counsel.webp', position: '50% 40%' },
-  screens: { src: '/backgrounds/screens.webp', position: '50% 50%' },
-} as const
+  /** Sunset through a window, an open Bible and a mug. No people. */
+  sunset: { src: '/backgrounds/sunset-study.webp', position: '22% 50%', subject: 'nature' },
+  /** A woman at a table with her Bible and coffee. */
+  reflection: { src: '/backgrounds/quiet-reflection.webp', position: '30% 50%', subject: 'women' },
+  /** A married couple meeting with their pastor. */
+  counsel: { src: '/backgrounds/pastoral-counsel.webp', position: '50% 40%', subject: 'family' },
+  /** The same photo cropped to the pastor and the man. */
+  counselMen: { src: '/backgrounds/pastoral-counsel-men.webp', position: '60% 40%', subject: 'men' },
+} as const satisfies Record<string, { src: string; position: string; subject: Subject }>
 
-type Photo = keyof typeof PHOTOS
+export type Photo = keyof typeof PHOTOS
 
-/** Photos the men's track may see: no woman on her own, no phone-scrolling. */
-const MEN_SAFE: ReadonlySet<Photo> = new Set<Photo>(['sunset', 'counsel'])
-
-/** Which photo each screen uses, per track. Screens not listed (Settings, Privacy) stay plain. */
-const ROUTE_PHOTOS: Record<string, Record<Track, Photo>> = {
-  [paths.signIn]: { men: 'sunset', spouse: 'sunset' },
-  [paths.resetPassword]: { men: 'sunset', spouse: 'sunset' },
-  [paths.welcome]: { men: 'sunset', spouse: 'sunset' },
-  [paths.home]: { men: 'sunset', spouse: 'sunset' },
-  [paths.grounding]: { men: 'sunset', spouse: 'sunset' },
-  [paths.identity]: { men: 'sunset', spouse: 'sunset' },
-  [paths.checkIn]: { men: 'sunset', spouse: 'reflection' },
-  [paths.journal]: { men: 'sunset', spouse: 'reflection' },
-  [paths.resources]: { men: 'counsel', spouse: 'counsel' },
-  [paths.library]: { men: 'counsel', spouse: 'counsel' },
-  [paths.accountability]: { men: 'counsel', spouse: 'counsel' },
-  [paths.triggers]: { men: 'sunset', spouse: 'screens' },
+/** The kinds of photo each audience may see. */
+const ALLOWED: Record<Audience, ReadonlySet<Subject>> = {
+  man: new Set(['nature', 'men']),
+  woman: new Set(['nature', 'women']),
+  spouse: new Set(['nature', 'family', 'faith']),
+  unknown: new Set(['nature']),
 }
 
-/** The photo for a screen. Unknown track is treated as the men's track. */
-export function photoFor(pathname: string, track: Track | null): Photo | null {
+/** Calm screens use nature for everyone. */
+const NATURE: Partial<Record<Audience, Photo>> = {}
+
+/** Which photo each screen uses. Screens not listed (Settings, Privacy) stay plain. */
+const ROUTE_PHOTOS: Record<string, Partial<Record<Audience, Photo>>> = {
+  [paths.signIn]: NATURE,
+  [paths.resetPassword]: NATURE,
+  [paths.welcome]: NATURE,
+  [paths.home]: NATURE,
+  [paths.grounding]: NATURE,
+  [paths.identity]: NATURE,
+  [paths.triggers]: NATURE,
+  [paths.checkIn]: { woman: 'reflection' },
+  [paths.journal]: { woman: 'reflection' },
+  [paths.resources]: { man: 'counselMen', woman: 'reflection', spouse: 'counsel' },
+  [paths.library]: { man: 'counselMen', woman: 'reflection', spouse: 'counsel' },
+  [paths.accountability]: { man: 'counselMen', woman: 'reflection', spouse: 'counsel' },
+}
+
+export function isAllowed(audience: Audience, photo: Photo): boolean {
+  return ALLOWED[audience].has(PHOTOS[photo].subject)
+}
+
+/** The photo for a screen, or null for a plain screen. */
+export function photoFor(pathname: string, audience: Audience): Photo | null {
   const choice = ROUTE_PHOTOS[pathname.toLowerCase()]
   if (!choice) return null
-  const photo = choice[track ?? 'men']
-  // Guard against a future mapping mistake ever showing men a restricted photo.
-  return track === 'spouse' || MEN_SAFE.has(photo) ? photo : 'sunset'
+  const photo = choice[audience] ?? 'sunset'
+  // Guard against a future mapping mistake ever showing someone a photo outside their set.
+  return isAllowed(audience, photo) ? photo : 'sunset'
 }
 
 export function PageBackground() {
   const { pathname } = useLocation()
   const { state } = useAuth()
   const profile = useProfile({ enabled: state.status === 'signed-in' })
-  const name = photoFor(pathname, profile.data?.track ?? null)
+  const name = photoFor(pathname, audienceFor(profile.data))
   if (!name) return null
   const photo = PHOTOS[name]
   return (

@@ -5,12 +5,14 @@ import { BackLink, Screen, useBack } from '@/components/layout'
 import { TapCard } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/controls'
 import { RESOURCES } from '@/content/resources'
-import { useTrack } from '@/data/queries'
+import { useProfile, useTrack } from '@/data/queries'
 import type { Track } from '@/data/types'
+import { recoveryTabLabel } from '@/lib/audience'
 
 export default function Resources() {
   const [params, setParams] = useSearchParams()
   const userTrack = useTrack()
+  const recoveryLabel = recoveryTabLabel(useProfile().data)
   const back = useBack(paths.resources)
 
   // The selected tab lives in the URL so it survives opening an article.
@@ -70,7 +72,7 @@ export default function Resources() {
       >
         <TabsList className="w-full">
           <TabsTrigger value="men" className="flex-1">
-            Men
+            {recoveryLabel}
           </TabsTrigger>
           <TabsTrigger value="spouse" className="flex-1">
             Spouses

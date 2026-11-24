@@ -46,6 +46,7 @@ function seed() {
         id: 'p',
         user_id: uid,
         track: 'men',
+        gender: 'man',
         reason: '',
         primary_needs: [],
         display_name: 'David',

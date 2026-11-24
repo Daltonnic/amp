@@ -11,7 +11,8 @@ import { Switch } from '@/components/ui/controls'
 import { Textarea } from '@/components/ui/input'
 import { NEEDS, ONBOARDING_STEPS, REMINDER_EXAMPLES } from '@/content/onboarding'
 import { useCreateProfile, useProfile } from '@/data/queries'
-import type { Track } from '@/data/types'
+import type { Gender, Track } from '@/data/types'
+import { GENDER_OPTIONS } from '@/lib/audience'
 import { hapticSuccess } from '@/lib/native'
 import { remindersSupported, syncReminders } from '@/lib/reminders'
 import { errorMessage } from '@/lib/utils'
@@ -24,6 +25,7 @@ export default function Onboarding() {
   const profile = useProfile()
   const createProfile = useCreateProfile()
   const [step, setStep] = useState(0)
+  const [gender, setGender] = useState<Gender | ''>('')
   const [track, setTrack] = useState<Track | ''>('')
   const [reason, setReason] = useState('')
   const [needs, setNeeds] = useState<string[]>([])
@@ -36,13 +38,22 @@ export default function Onboarding() {
   const current = ONBOARDING_STEPS[step]!
   const isLast = step === ONBOARDING_STEPS.length - 1
   const canContinue =
-    step === 1 ? Boolean(track) : step === 2 ? reason.trim().length > 0 : step === 3 ? needs.length > 0 : true
+    current.id === 'about'
+      ? Boolean(gender)
+      : current.id === 'track'
+        ? Boolean(track)
+        : current.id === 'reason'
+          ? reason.trim().length > 0
+          : current.id === 'need'
+            ? needs.length > 0
+            : true
 
   const finish = async () => {
-    if (!track) return
+    if (!track || !gender) return
     try {
       await createProfile.mutateAsync({
         track,
+        gender,
         reason: reason.trim(),
         primary_needs: needs,
         display_name: '',
@@ -88,7 +99,7 @@ export default function Onboarding() {
             <p className="mb-8 text-muted-foreground">{current.subtitle}</p>
 
             <div className="flex-1">
-              {step === 0 && (
+              {current.id === 'welcome' && (
                 <div className="space-y-6">
                   <p className="leading-relaxed text-foreground/80">
                     This is a safe space for formation, awareness, and healing. Whether you're taking your
@@ -105,7 +116,22 @@ export default function Onboarding() {
                 </div>
               )}
 
-              {step === 1 && (
+              {current.id === 'about' && (
+                <div className="space-y-4">
+                  {GENDER_OPTIONS.map((option) => (
+                    <OptionCard
+                      key={option.value}
+                      selected={gender === option.value}
+                      onClick={() => setGender(option.value)}
+                      className="p-5"
+                    >
+                      <span className="font-semibold text-foreground">{option.label}</span>
+                    </OptionCard>
+                  ))}
+                </div>
+              )}
+
+              {current.id === 'track' && (
                 <div className="space-y-4" role="radiogroup" aria-label="Who is this for?">
                   <OptionCard selected={track === 'men'} onClick={() => setTrack('men')} className="p-5">
                     <div className="flex items-start gap-4">
@@ -115,7 +141,8 @@ export default function Onboarding() {
                       <div>
                         <h2 className="font-semibold text-foreground">I'm seeking help for myself</h2>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          Formation and support for men pursuing freedom from sexual brokenness.
+                          Formation and support for {gender === 'woman' ? 'women' : 'men'} pursuing freedom
+                          from sexual brokenness.
                         </p>
                       </div>
                     </div>
@@ -140,7 +167,7 @@ export default function Onboarding() {
                 </div>
               )}
 
-              {step === 2 && (
+              {current.id === 'reason' && (
                 <Textarea
                   aria-label="What brings you here?"
                   placeholder={
@@ -155,7 +182,7 @@ export default function Onboarding() {
                 />
               )}
 
-              {step === 3 && (
+              {current.id === 'need' && (
                 <div className="space-y-3">
                   <p className="-mt-4 mb-2 text-xs text-muted-foreground">Select up to 3</p>
                   {options.map((option) => {
@@ -179,7 +206,7 @@ export default function Onboarding() {
                 </div>
               )}
 
-              {step === 4 && (
+              {current.id === 'reminders' && (
                 <div className="space-y-6">
                   <Card className="flex items-center justify-between gap-4 p-4">
                     <div>

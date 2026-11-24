@@ -9,7 +9,7 @@ insert into public.library_articles (title, content, category, published) values
 -- User A writes their own data.
 set role authenticated;
 select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
-insert into public.profiles (track) values ('men');
+insert into public.profiles (track, gender) values ('men', 'woman');
 insert into public.journal_entries (content) values ('private thoughts');
 insert into public.check_ins (track, date, emotions) values ('men', current_date, array['Hopeful', 'Grateful']);
 
@@ -28,6 +28,15 @@ do $$ begin
   begin
     insert into public.check_ins (track, date, emotions) values ('men', current_date, array_fill('x'::text, array[21]));
     raise exception 'emotions limit not enforced';
+  exception when check_violation then null;
+  end;
+end $$;
+
+-- Gender only accepts man or woman.
+do $$ begin
+  begin
+    insert into public.profiles (track, gender) values ('spouse', 'other');
+    raise exception 'gender check not enforced';
   exception when check_violation then null;
   end;
 end $$;

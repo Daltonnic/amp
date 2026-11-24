@@ -89,8 +89,9 @@ Deno.serve(async (req) => {
     return json(req, 500, { error: 'Something went wrong. Please try again.' })
   }
 
-  const { data: profile } = await auth.userClient.from('profiles').select('track').maybeSingle()
+  const { data: profile } = await auth.userClient.from('profiles').select('track, gender').maybeSingle()
   const track = profile?.track === 'spouse' ? 'spouse' : 'men'
+  const gender = profile?.gender === 'man' || profile?.gender === 'woman' ? profile.gender : null
   await admin.from('ai_usage').insert({ user_id: auth.user.id })
 
   const encoder = new TextEncoder()
@@ -107,7 +108,7 @@ Deno.serve(async (req) => {
             betas: ['server-side-fallback-2026-07-01'],
             fallbacks: 'default',
             cache_control: { type: 'ephemeral' },
-            system: systemPrompt(track),
+            system: systemPrompt(track, gender),
             messages,
           },
           { signal: req.signal },

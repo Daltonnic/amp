@@ -6,19 +6,19 @@ Everything in the Base44 app's code has been rebuilt here. Three things live onl
 
 ## Mapping
 
-| Base44                                    | Here                                                                                              |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `UserProfile`                             | `profiles` table (`primary_need` "a,b,c" → `primary_needs` array; `pin_code` is **not** migrated) |
-| `CheckIn`                                 | `check_ins`                                                                                       |
-| `JournalEntry`                            | `journal_entries`                                                                                 |
-| `TriggerLog`                              | `trigger_logs`                                                                                    |
-| `GroundingSession`                        | `grounding_sessions`                                                                              |
-| `AccountabilityContact`                   | `accountability_contacts`                                                                         |
-| `LibraryArticle`                          | `library_articles`                                                                                |
-| `integrations.Core.SendEmail`             | Pre-written text / email sent from the person's own phone                                         |
-| Agent `grounding_guide`                   | `grounding-guide` Edge Function (Claude)                                                          |
-| Base44 login (hosted page)                | Supabase Auth, email + password                                                                   |
-| `/Home`, `/CheckIn`, `/TriggerAwareness`… | `/home`, `/check-in`, `/triggers`… (old links redirect)                                           |
+| Base44                                    | Here                                                                                                                                                                          |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `UserProfile`                             | `profiles` table (`primary_need` "a,b,c" → `primary_needs` array; `pin_code` is **not** migrated; `gender` is new and starts empty, so imported users are asked once on Home) |
+| `CheckIn`                                 | `check_ins`                                                                                                                                                                   |
+| `JournalEntry`                            | `journal_entries`                                                                                                                                                             |
+| `TriggerLog`                              | `trigger_logs`                                                                                                                                                                |
+| `GroundingSession`                        | `grounding_sessions`                                                                                                                                                          |
+| `AccountabilityContact`                   | `accountability_contacts`                                                                                                                                                     |
+| `LibraryArticle`                          | `library_articles`                                                                                                                                                            |
+| `integrations.Core.SendEmail`             | Pre-written text / email sent from the person's own phone                                                                                                                     |
+| Agent `grounding_guide`                   | `grounding-guide` Edge Function (Claude)                                                                                                                                      |
+| Base44 login (hosted page)                | Supabase Auth, email + password                                                                                                                                               |
+| `/Home`, `/CheckIn`, `/TriggerAwareness`… | `/home`, `/check-in`, `/triggers`… (old links redirect)                                                                                                                       |
 
 ## 1. Export from Base44
 

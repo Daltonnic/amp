@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { photoFor } from '@/components/PageBackground'
+import { isAllowed, photoFor, type Photo } from '@/components/PageBackground'
+import { audienceFor, recoveryTabLabel, trackLabel, type Audience } from '@/lib/audience'
 
 const ALL_ROUTES = [
   '/sign-in',
@@ -16,33 +17,60 @@ const ALL_ROUTES = [
   '/triggers',
 ]
 
+function photosSeenBy(audience: Audience): Set<Photo | null> {
+  return new Set(ALL_ROUTES.map((route) => photoFor(route, audience)))
+}
+
+describe('audience', () => {
+  it('splits the recovery track by man or woman, and keeps spouses together', () => {
+    expect(audienceFor({ track: 'men', gender: 'man' })).toBe('man')
+    expect(audienceFor({ track: 'men', gender: 'woman' })).toBe('woman')
+    expect(audienceFor({ track: 'spouse', gender: 'man' })).toBe('spouse')
+    expect(audienceFor({ track: 'spouse', gender: 'woman' })).toBe('spouse')
+    expect(audienceFor({ track: 'men', gender: null })).toBe('unknown')
+    expect(audienceFor(null)).toBe('unknown')
+  })
+
+  it('names the recovery track for women as Women’s Formation', () => {
+    expect(trackLabel('men', 'woman')).toBe("Women's Formation")
+    expect(trackLabel('men', 'man')).toBe("Men's Formation")
+    expect(trackLabel('spouse', 'woman')).toBe('Betrayed Spouse')
+    expect(recoveryTabLabel({ track: 'men', gender: 'woman' })).toBe('Women')
+    expect(recoveryTabLabel({ track: 'spouse', gender: 'woman' })).toBe('Men')
+  })
+})
+
 describe('page backgrounds', () => {
-  it('never shows the men’s track a woman on her own or phone-scrolling', () => {
-    for (const route of ALL_ROUTES) {
-      expect(['sunset', 'counsel']).toContain(photoFor(route, 'men'))
-    }
+  it('shows a man in recovery only men or nature', () => {
+    for (const photo of photosSeenBy('man')) expect(['sunset', 'counselMen']).toContain(photo)
+    expect(photoFor('/accountability', 'man')).toBe('counselMen')
   })
 
-  it('treats an unknown track (signed out, onboarding) like the men’s track', () => {
-    for (const route of ALL_ROUTES) {
-      expect(['sunset', 'counsel']).toContain(photoFor(route, null))
-    }
+  it('shows a woman in recovery only women or nature', () => {
+    for (const photo of photosSeenBy('woman')) expect(['sunset', 'reflection']).toContain(photo)
+    expect(photoFor('/journal', 'woman')).toBe('reflection')
   })
 
-  it('keeps the full set for the spouse track', () => {
-    expect(photoFor('/journal', 'spouse')).toBe('reflection')
-    expect(photoFor('/accountability', 'spouse')).toBe('counsel')
-    expect(photoFor('/triggers', 'spouse')).toBe('screens')
+  it('shows a betrayed spouse only family, nature or faith-building', () => {
+    for (const photo of photosSeenBy('spouse')) expect(['sunset', 'counsel']).toContain(photo)
+    expect(photoFor('/resources', 'spouse')).toBe('counsel')
   })
 
-  it('shows men the family picture (couple with their pastor) on support screens', () => {
-    expect(photoFor('/accountability', 'men')).toBe('counsel')
-    expect(photoFor('/journal', 'men')).toBe('sunset')
-    expect(photoFor('/triggers', 'men')).toBe('sunset')
+  it('shows only nature before we know who someone is', () => {
+    expect(photosSeenBy('unknown')).toEqual(new Set(['sunset']))
+  })
+
+  it('never lets one audience see another audience’s people photos', () => {
+    expect(isAllowed('man', 'reflection')).toBe(false)
+    expect(isAllowed('man', 'counsel')).toBe(false)
+    expect(isAllowed('woman', 'counselMen')).toBe(false)
+    expect(isAllowed('woman', 'counsel')).toBe(false)
+    expect(isAllowed('spouse', 'reflection')).toBe(false)
+    expect(isAllowed('spouse', 'counselMen')).toBe(false)
   })
 
   it('leaves Settings and Privacy plain', () => {
-    expect(photoFor('/settings', 'men')).toBeNull()
+    expect(photoFor('/settings', 'man')).toBeNull()
     expect(photoFor('/privacy', 'spouse')).toBeNull()
   })
 })

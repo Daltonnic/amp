@@ -16,6 +16,11 @@ export const ONBOARDING_STEPS: { id: string; title: string; subtitle: string }[]
     subtitle: 'A place of formation, healing, and hope.',
   },
   {
+    id: 'about',
+    title: 'A little about you',
+    subtitle: 'This helps us choose the right words and pictures for you.',
+  },
+  {
     id: 'track',
     title: 'Who is this for?',
     subtitle: 'This helps us tailor your experience.',

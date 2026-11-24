@@ -15,19 +15,22 @@ import {
   TrendingUp,
   type LucideIcon,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { paths } from '@/app/routes'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { WeeklyChart, type ChartSeries } from '@/components/WeeklyChart'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { DialogDescription, DialogTitle, Sheet, SheetContent } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/controls'
 import { DAILY_FOCUS, ENCOURAGEMENTS } from '@/content/home'
-import { useContacts, useProfile, useTodayCheckIn, useWeekCheckIns } from '@/data/queries'
-import type { AccountabilityContact, CheckIn, Track } from '@/data/types'
+import { useContacts, useProfile, useTodayCheckIn, useUpdateProfile, useWeekCheckIns } from '@/data/queries'
+import type { AccountabilityContact, CheckIn, Gender, Track } from '@/data/types'
+import { GENDER_OPTIONS } from '@/lib/audience'
 import { dailyPick, greeting } from '@/lib/dates'
 import { computeTrend, mostFrequentEmotion, type Trend } from '@/lib/insights'
-import { hapticTap } from '@/lib/native'
+import { hapticSuccess, hapticTap } from '@/lib/native'
 import { channelFor, reachOut } from '@/lib/support'
 import { cn } from '@/lib/utils'
 
@@ -63,6 +66,7 @@ export default function Home() {
           </p>
           <h1 className="mt-0.5 font-display text-2xl font-semibold text-foreground">The Journey</h1>
         </header>
+        {!profile.data.gender && <AboutYouPrompt profileId={profile.data.id} />}
         <InstallPrompt />
         <Encouragement track={track} />
         <QuickActions />
@@ -72,6 +76,39 @@ export default function Home() {
         <TodaysFocus track={track} />
       </div>
     </PullToRefresh>
+  )
+}
+
+/** Asks people who set up their account before this question existed. */
+function AboutYouPrompt({ profileId }: { profileId: string }) {
+  const update = useUpdateProfile()
+  const choose = (gender: Gender) =>
+    update.mutate(
+      { id: profileId, patch: { gender } },
+      {
+        onSuccess: () => hapticSuccess(),
+        onError: () => toast.error('That didn’t save. Please try again.'),
+      },
+    )
+  return (
+    <Card className="p-5">
+      <h2 className="font-semibold text-foreground">One quick question</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Are you a man or a woman? This helps us choose the right words and pictures for you.
+      </p>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        {GENDER_OPTIONS.map((option) => (
+          <Button
+            key={option.value}
+            variant="outline"
+            disabled={update.isPending}
+            onClick={() => choose(option.value)}
+          >
+            {option.label}
+          </Button>
+        ))}
+      </div>
+    </Card>
   )
 }
 

@@ -20,14 +20,26 @@ function watchErrors(page: Page) {
   return errors
 }
 
-async function onboard(page: Page, track: 'men' | 'spouse') {
+/** The faded photo behind the current screen. */
+const background = (page: Page) => page.locator('img[src^="/backgrounds/"]')
+
+async function onboard(page: Page, track: 'men' | 'spouse', gender: 'man' | 'woman' = 'man') {
   await page.goto('/')
   await expect(page).toHaveURL(/\/welcome$/)
   await expect(page.getByRole('heading', { name: 'Welcome to The Journey' })).toBeVisible()
+  await expect(background(page)).toHaveAttribute('src', /sunset-study/)
   await page.getByRole('button', { name: 'Continue' }).click()
 
   const cont = page.getByRole('button', { name: 'Continue' })
+  await expect(page.getByRole('heading', { name: 'A little about you' })).toBeVisible()
   await expect(cont).toBeDisabled()
+  await page.getByRole('button', { name: gender === 'man' ? "I'm a man" : "I'm a woman" }).click()
+  await cont.click()
+
+  await expect(cont).toBeDisabled()
+  await expect(
+    page.getByText(`Formation and support for ${gender === 'man' ? 'men' : 'women'} pursuing freedom`),
+  ).toBeVisible()
   await page
     .getByRole('button', { name: track === 'men' ? /seeking help for myself/ : /betrayed spouse/ })
     .click()
@@ -189,7 +201,13 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
 
 test('spouse: track-specific content, resources, identity, library, accountability', async ({ page }) => {
   const errors = watchErrors(page)
-  await onboard(page, 'spouse')
+  await onboard(page, 'spouse', 'man')
+
+  // A betrayed spouse sees family, nature or faith-building photos.
+  await page.goto('/resources')
+  await expect(background(page)).toHaveAttribute('src', /pastoral-counsel\.webp/)
+  await page.goto('/journal')
+  await expect(background(page)).toHaveAttribute('src', /sunset-study/)
 
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Check-In' }).click()
   await expect(page.getByText('Your emotions are valid. Name them.')).toBeVisible()
@@ -316,6 +334,12 @@ test('settings: PIN lock, theme, legacy links, account deletion', async ({ page 
   const errors = watchErrors(page)
   await onboard(page, 'men')
 
+  // A man in recovery sees men or nature.
+  await page.goto('/accountability')
+  await expect(background(page)).toHaveAttribute('src', /pastoral-counsel-men/)
+  await page.goto('/journal')
+  await expect(background(page)).toHaveAttribute('src', /sunset-study/)
+
   // Old Base44 URLs still work.
   await page.goto('/CheckIn')
   await expect(page).toHaveURL(/\/check-in$/)
@@ -370,6 +394,38 @@ test('settings: PIN lock, theme, legacy links, account deletion', async ({ page 
     Object.keys(localStorage).filter((k) => k.startsWith('amp.device.')),
   )
   expect(leftovers).toEqual([])
+
+  expect(errors).toEqual([])
+})
+
+test('woman in recovery: her own wording and photos, and the one-tap question', async ({ page }) => {
+  const errors = watchErrors(page)
+  await onboard(page, 'men', 'woman')
+
+  await page.goto('/journal')
+  await expect(background(page)).toHaveAttribute('src', /quiet-reflection/)
+  await page.goto('/resources')
+  await expect(page.getByRole('tab', { name: 'Women' })).toBeVisible()
+  await expect(background(page)).toHaveAttribute('src', /quiet-reflection/)
+  await page.goto('/settings')
+  await expect(page.getByText("Women's Formation")).toBeVisible()
+
+  // Someone who set up before the question existed is asked once on Home,
+  // and sees only nature until they answer.
+  await page.evaluate(() => {
+    const key = 'amp.device.profiles'
+    const rows = JSON.parse(localStorage.getItem(key) ?? '[]') as Record<string, unknown>[]
+    for (const row of rows) delete row.gender
+    localStorage.setItem(key, JSON.stringify(rows))
+  })
+  await page.goto('/journal')
+  await expect(background(page)).toHaveAttribute('src', /sunset-study/)
+  await page.goto('/home')
+  await expect(page.getByRole('heading', { name: 'One quick question' })).toBeVisible()
+  await page.getByRole('button', { name: "I'm a woman" }).click()
+  await expect(page.getByRole('heading', { name: 'One quick question' })).toBeHidden()
+  await page.goto('/journal')
+  await expect(background(page)).toHaveAttribute('src', /quiet-reflection/)
 
   expect(errors).toEqual([])
 })

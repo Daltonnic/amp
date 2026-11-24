@@ -5,11 +5,15 @@
 
 export type Track = 'men' | 'spouse'
 
+/** Asked during account setup. Null on profiles made before the question existed. */
+export type Gender = 'man' | 'woman'
+
 /** Base44: UserProfile */
 export interface Profile {
   id: string
   user_id: string
   track: Track
+  gender: Gender | null
   reason: string
   primary_needs: string[]
   display_name: string
