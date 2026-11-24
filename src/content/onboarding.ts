@@ -16,6 +16,11 @@ export const ONBOARDING_STEPS: { id: string; title: string; subtitle: string }[]
     subtitle: 'A place of formation, healing, and hope.',
   },
   {
+    id: 'name',
+    title: "What's your name?",
+    subtitle: 'Your first name is required. You choose how it shows to others.',
+  },
+  {
     id: 'about',
     title: 'A little about you',
     subtitle: 'This helps us choose the right words and pictures for you.',

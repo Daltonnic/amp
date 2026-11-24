@@ -13,6 +13,8 @@ import { NEEDS, ONBOARDING_STEPS, REMINDER_EXAMPLES } from '@/content/onboarding
 import { useCreateProfile, useProfile } from '@/data/queries'
 import type { Gender, Track } from '@/data/types'
 import { GENDER_OPTIONS } from '@/lib/audience'
+import { isNameComplete, type NameParts } from '@/lib/names'
+import { NameFields, profileNamePatch } from '@/components/NameFields'
 import { hapticSuccess } from '@/lib/native'
 import { remindersSupported, syncReminders } from '@/lib/reminders'
 import { errorMessage } from '@/lib/utils'
@@ -25,6 +27,12 @@ export default function Onboarding() {
   const profile = useProfile()
   const createProfile = useCreateProfile()
   const [step, setStep] = useState(0)
+  const [name, setName] = useState<NameParts>({
+    first: '',
+    last: '',
+    style: 'first_last_initial',
+    nickname: '',
+  })
   const [gender, setGender] = useState<Gender | ''>('')
   const [track, setTrack] = useState<Track | ''>('')
   const [reason, setReason] = useState('')
@@ -38,28 +46,27 @@ export default function Onboarding() {
   const current = ONBOARDING_STEPS[step]!
   const isLast = step === ONBOARDING_STEPS.length - 1
   const canContinue =
-    current.id === 'about'
-      ? Boolean(gender)
-      : current.id === 'track'
-        ? Boolean(track)
-        : current.id === 'reason'
-          ? reason.trim().length > 0
-          : current.id === 'need'
-            ? needs.length > 0
-            : true
+    current.id === 'name'
+      ? isNameComplete(name)
+      : current.id === 'about'
+        ? Boolean(gender)
+        : current.id === 'track'
+          ? Boolean(track)
+          : current.id === 'reason'
+            ? reason.trim().length > 0
+            : current.id === 'need'
+              ? needs.length > 0
+              : true
 
   const finish = async () => {
-    if (!track || !gender) return
+    if (!track || !gender || !isNameComplete(name)) return
     try {
       await createProfile.mutateAsync({
         track,
         gender,
         reason: reason.trim(),
         primary_needs: needs,
-        display_name: '',
-        last_name: '',
-        name_display: 'first_last_initial',
-        nickname: '',
+        ...profileNamePatch(name),
         freedom_start: null,
         freedom_best_days: 0,
         freedom_hidden: false,
@@ -121,6 +128,8 @@ export default function Onboarding() {
                   </div>
                 </div>
               )}
+
+              {current.id === 'name' && <NameFields value={name} onChange={setName} />}
 
               {current.id === 'about' && (
                 <div className="space-y-4">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { avatarColor, avatarInitials, publicName } from '@/lib/names'
+import { avatarColor, avatarInitials, isNameComplete, publicName } from '@/lib/names'
 import { roomFor } from '@/content/group'
 
 const base = { first: 'David', last: 'Miller', nickname: '' }
@@ -18,6 +18,13 @@ describe('public names (must match public.public_name in SQL)', () => {
   it('is empty when the chosen style has nothing to show', () => {
     expect(publicName({ ...base, style: 'nickname' })).toBe('')
     expect(publicName({ first: '', last: '', nickname: '', style: 'first_last_initial' })).toBe('')
+  })
+
+  it('requires a first name, and a nickname when that style is chosen', () => {
+    expect(isNameComplete({ ...base, style: 'first_last_initial' })).toBe(true)
+    expect(isNameComplete({ ...base, first: '  ', style: 'first_last_initial' })).toBe(false)
+    expect(isNameComplete({ ...base, style: 'nickname' })).toBe(false)
+    expect(isNameComplete({ ...base, nickname: 'Steady', style: 'nickname' })).toBe(true)
   })
 
   it('makes avatar initials and a steady color', () => {

@@ -62,7 +62,11 @@ describe('calendar wording', () => {
 
 describe('expanding repeats (on-device)', () => {
   it('repeats weekly within the range', () => {
-    const list = expandOccurrences([event({ repeat: 'weekly' })], new Date(2026, 11, 1), new Date(2026, 11, 29))
+    const list = expandOccurrences(
+      [event({ repeat: 'weekly' })],
+      new Date(2026, 11, 1),
+      new Date(2026, 11, 29),
+    )
     expect(list.map((o) => o.starts_local)).toEqual([
       '2026-12-01T19:00:00',
       '2026-12-08T19:00:00',
@@ -78,7 +82,12 @@ describe('expanding repeats (on-device)', () => {
       new Date(2027, 0, 1),
       new Date(2027, 6, 1),
     )
-    expect(list.map((o) => o.starts_local.slice(0, 10))).toEqual(['2027-01-31', '2027-02-28', '2027-03-31', '2027-04-30'])
+    expect(list.map((o) => o.starts_local.slice(0, 10))).toEqual([
+      '2027-01-31',
+      '2027-02-28',
+      '2027-03-31',
+      '2027-04-30',
+    ])
   })
 
   it('includes a one-time event once', () => {
@@ -87,7 +96,11 @@ describe('expanding repeats (on-device)', () => {
   })
 
   it('makes an .ics file for adding to a phone calendar', () => {
-    const [o] = expandOccurrences([event({ location: 'Room 2, Main St' })], new Date(2026, 11, 1), new Date(2026, 11, 2))
+    const [o] = expandOccurrences(
+      [event({ location: 'Room 2, Main St' })],
+      new Date(2026, 11, 1),
+      new Date(2026, 11, 2),
+    )
     const ics = icsFor(o!)
     expect(ics).toContain('BEGIN:VEVENT')
     expect(ics).toContain('SUMMARY:Tuesday Night Group')

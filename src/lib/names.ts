@@ -32,6 +32,11 @@ export function publicName({ first, last, style, nickname }: NameParts): string 
   }
 }
 
+/** A first name is required, and the chosen style must have something to show. */
+export function isNameComplete(parts: NameParts): boolean {
+  return parts.first.trim() !== '' && publicName(parts) !== ''
+}
+
 export const NAME_STYLES: { value: NameDisplay; label: string; hint: string }[] = [
   { value: 'first_last_initial', label: 'First name and last initial', hint: 'Recommended' },
   { value: 'first', label: 'First name only', hint: '' },

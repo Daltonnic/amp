@@ -3,6 +3,7 @@ import { Navigate, Outlet, ScrollRestoration, useLocation, useNavigate } from 'r
 import { App as CapApp } from '@capacitor/app'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { WifiOff } from 'lucide-react'
+import { NameRequired } from '@/components/NameRequired'
 import { PageBackground } from '@/components/PageBackground'
 import { TabBar } from '@/components/TabBar'
 import { useGroupLive, useGroupStatus, useMyRoom } from '@/data/groupQueries'
@@ -71,6 +72,8 @@ export function TabsLayout() {
   if (profile.isPending) return <FullScreenSpinner />
   if (profile.isError) return <LoadError onRetry={() => void profile.refetch()} />
   if (!profile.data) return <Navigate to={paths.welcome} replace />
+  // Everyone needs a name; people who set up before it was required add one now.
+  if (!profile.data.display_name?.trim()) return <NameRequired profile={profile.data} />
 
   return (
     <div className="min-h-dvh pt-safe">

@@ -29,7 +29,11 @@ export function useNextMeeting() {
   const q = useOccurrences(now, addDays(now, 30))
   const rsvps = useRsvpSummary(now, addDays(now, 30))
   const next = q.data?.find((o) => new Date(o.ends_at) > now) ?? null
-  return { ...q, data: next, rsvp: next ? rsvps.data?.get(occurrenceKey(next.event_id, next.starts_at)) : undefined }
+  return {
+    ...q,
+    data: next,
+    rsvp: next ? rsvps.data?.get(occurrenceKey(next.event_id, next.starts_at)) : undefined,
+  }
 }
 
 export function useCalendarEvent(id: string | null) {
@@ -74,15 +78,28 @@ export function useRsvpSummary(from: Date, to: Date, enabled = true) {
 export function useRsvp() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ eventId, start, response }: { eventId: string; start: string; response: RsvpResponse | null }) =>
-      calendar.rsvp(eventId, start, response),
+    mutationFn: ({
+      eventId,
+      start,
+      response,
+    }: {
+      eventId: string
+      start: string
+      response: RsvpResponse | null
+    }) => calendar.rsvp(eventId, start, response),
     onMutate: ({ eventId, start, response }) => {
       const key = occurrenceKey(eventId, start)
       const snapshots = qc.getQueriesData<Map<string, RsvpSummary>>({ queryKey: ['calendar', 'rsvps'] })
       for (const [queryKey, map] of snapshots) {
         if (!map) continue
         const next = new Map(map)
-        const cur = next.get(key) ?? { event_id: eventId, occurrence_start: start, going: 0, not_going: 0, mine: null }
+        const cur = next.get(key) ?? {
+          event_id: eventId,
+          occurrence_start: start,
+          going: 0,
+          not_going: 0,
+          mine: null,
+        }
         const going = cur.going - (cur.mine === 'yes' ? 1 : 0) + (response === 'yes' ? 1 : 0)
         const notGoing = cur.not_going - (cur.mine === 'no' ? 1 : 0) + (response === 'no' ? 1 : 0)
         next.set(key, { ...cur, going, not_going: notGoing, mine: response })

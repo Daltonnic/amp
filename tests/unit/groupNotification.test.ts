@@ -78,11 +78,23 @@ describe('meeting reminders', () => {
   })
 
   it('keeps the meeting name off the lock screen unless previews are on', () => {
-    const quiet = eventReminderNotification({ eventId: 'e1', title: 'Betrayal Healing Circle', minutes: 60, preview: false })
+    const quiet = eventReminderNotification({
+      eventId: 'e1',
+      title: 'Betrayal Healing Circle',
+      minutes: 60,
+      preview: false,
+    })
     expect(quiet).toMatchObject({ title: 'AMP', body: 'A meeting starts in 1 hour', url: '/calendar' })
     expect(JSON.stringify(quiet)).not.toMatch(/Betrayal/)
-    const full = eventReminderNotification({ eventId: 'e1', title: 'Tuesday Night Group', minutes: 1440, preview: true })
+    const full = eventReminderNotification({
+      eventId: 'e1',
+      title: 'Tuesday Night Group',
+      minutes: 1440,
+      preview: true,
+    })
     expect(full).toMatchObject({ title: 'Tuesday Night Group', body: 'Starts in 1 day' })
-    expect(eventReminderNotification({ eventId: 'e1', title: 'X', minutes: 0, preview: true }).body).toBe('Starting now')
+    expect(eventReminderNotification({ eventId: 'e1', title: 'X', minutes: 0, preview: true }).body).toBe(
+      'Starting now',
+    )
   })
 })

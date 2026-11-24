@@ -41,6 +41,7 @@ import { trackLabel } from '@/lib/audience'
 import { usePush } from '@/data/pushQueries'
 import { requestPushPermission, type PushState } from '@/lib/push'
 import { NameFields, namePartsOf, profileNamePatch } from '@/components/NameFields'
+import { isNameComplete } from '@/lib/names'
 import { GROUP_ROOMS, roomFor } from '@/content/group'
 import {
   useBlockMember,
@@ -99,7 +100,10 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
     reminders !== p.daily_reminders ||
     reminderTime !== p.reminder_time.slice(0, 5)
 
+  const nameOk = isNameComplete(name)
+
   const save = async () => {
+    if (!nameOk) return
     try {
       await update.mutateAsync({
         id: p.id,
@@ -202,7 +206,13 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
           ))}
       </Section>
 
-      <Button onClick={() => void save()} disabled={!dirty || update.isPending} className="w-full">
+      {!nameOk && (
+        <p className="text-center text-sm font-medium text-destructive" role="alert">
+          Your first name is required
+          {name.style === 'nickname' && name.first.trim() ? ', and so is your nickname' : ''}.
+        </p>
+      )}
+      <Button onClick={() => void save()} disabled={!dirty || !nameOk || update.isPending} className="w-full">
         {update.isPending ? 'Saving...' : 'Save Settings'}
       </Button>
 

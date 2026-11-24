@@ -31,6 +31,13 @@ async function onboard(page: Page, track: 'men' | 'spouse', gender: 'man' | 'wom
   await page.getByRole('button', { name: 'Continue' }).click()
 
   const cont = page.getByRole('button', { name: 'Continue' })
+  // A name is required.
+  await expect(page.getByRole('heading', { name: "What's your name?" })).toBeVisible()
+  await expect(cont).toBeDisabled()
+  await page.getByLabel('First name', { exact: true }).fill('Sam')
+  await expect(page.getByText('Others will see:')).toContainText('Sam')
+  await cont.click()
+
   await expect(page.getByRole('heading', { name: 'A little about you' })).toBeVisible()
   await expect(cont).toBeDisabled()
   await page.getByRole('button', { name: gender === 'man' ? "I'm a man" : "I'm a woman" }).click()
@@ -417,6 +424,23 @@ test('woman in recovery: her own wording and photos, and the one-tap question', 
   await expect(background(page)).toHaveAttribute('src', /quiet-reflection/)
   await page.goto('/settings')
   await expect(page.getByText("Women's Formation")).toBeVisible()
+
+  // Someone without a name can't use the app until they add one.
+  await page.evaluate(() => {
+    const key = 'amp.device.profiles'
+    const rows = JSON.parse(localStorage.getItem(key) ?? '[]') as Record<string, unknown>[]
+    for (const row of rows) row.display_name = ''
+    localStorage.setItem(key, JSON.stringify(rows))
+  })
+  await page.goto('/home')
+  await expect(page.getByRole('heading', { name: "What's your name?" })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0)
+  const nameContinue = page.getByRole('button', { name: 'Continue' })
+  await expect(nameContinue).toBeDisabled()
+  await page.getByLabel('First name', { exact: true }).fill('Ruth')
+  await nameContinue.click()
+  await expect(page.getByRole('heading', { name: 'The Journey' })).toBeVisible()
+  await expect(page.getByText(/, Ruth$/)).toBeVisible()
 
   // Someone who set up before the question existed is asked once on Home,
   // and sees only nature until they answer.

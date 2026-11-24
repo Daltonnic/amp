@@ -190,16 +190,18 @@ export function createDeviceCalendar(): CalendarApi {
     async rsvp(eventId, occurrenceStart, response) {
       const key = occurrenceKey(eventId, occurrenceStart)
       const rest = loadRsvps().filter((r) => occurrenceKey(r.event_id, r.occurrence_start) !== key)
-      const next = response ? [...rest, { event_id: eventId, occurrence_start: occurrenceStart, response }] : rest
+      const next = response
+        ? [...rest, { event_id: eventId, occurrence_start: occurrenceStart, response }]
+        : rest
       localStorage.setItem(RSVP_KEY, JSON.stringify(next))
     },
     async rsvpPeople(eventId, occurrenceStart) {
       const key = occurrenceKey(eventId, occurrenceStart)
       let name = 'You'
       try {
-        const m = (JSON.parse(localStorage.getItem('amp.device.group_members') ?? '[]') as GroupMember[]).find(
-          (x) => x.user_id === DEVICE_USER_ID,
-        )
+        const m = (
+          JSON.parse(localStorage.getItem('amp.device.group_members') ?? '[]') as GroupMember[]
+        ).find((x) => x.user_id === DEVICE_USER_ID)
         if (m?.display_name) name = m.display_name
       } catch {
         /* default */

@@ -52,7 +52,7 @@ export function NameFields({ value, onChange }: { value: NameParts; onChange: (n
               key={style.value}
               className={cn(
                 'flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors',
-                checked ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30',
+                checked ? 'border-primary bg-primary/5' : 'border-border bg-card/90 hover:border-primary/30',
               )}
             >
               <input
