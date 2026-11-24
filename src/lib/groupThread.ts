@@ -48,3 +48,29 @@ export function buildThread(messages: GroupMessage[], now = new Date()): ThreadI
   }
   return items
 }
+
+/**
+ * Folds the newest messages from the server (newest first, at most
+ * `pageSize`) into the pages already on screen, so anything missed while the
+ * live connection was down appears without reloading every page. Changed
+ * messages (likes, deletes) are replaced in place.
+ *
+ * Returns null when more than a page arrived while away, so some may be
+ * missing in between; the caller should reload instead.
+ */
+export function mergeLatest(
+  pages: GroupMessage[][],
+  latest: GroupMessage[],
+  pageSize: number,
+): { pages: GroupMessage[][]; added: GroupMessage[] } | null {
+  const fresh = new Map(latest.map((m) => [m.id, m]))
+  const loaded = new Set(pages.flat().map((m) => m.id))
+  const added = latest.filter((m) => !loaded.has(m.id))
+  if (loaded.size > 0 && latest.length >= pageSize && added.length === latest.length) return null
+  if (added.length === 0 && !latest.some((m) => loaded.has(m.id))) return { pages, added }
+  const next = pages.map((page) => page.map((m) => fresh.get(m.id) ?? m))
+  if (added.length) {
+    next[0] = [...added, ...(next[0] ?? [])].sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+  }
+  return { pages: next, added }
+}

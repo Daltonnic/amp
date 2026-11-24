@@ -57,10 +57,20 @@ export interface GroupChatApi {
   /** Leaders: make someone a leader, or step them down. */
   setLeader(userId: string, make: boolean): Promise<void>
   /**
-   * Live updates: `onMessage` gets each new or changed message, `onReconnect`
-   * fires when the connection comes back (so missed messages can be fetched).
+   * Live updates: `onMessage` gets each new or changed message; `onStatus`
+   * says whether the live connection is up (when it comes back, missed
+   * messages can be fetched).
    */
-  subscribe(room: GroupRoomId, onMessage: (m: GroupMessage) => void, onReconnect: () => void): () => void
+  subscribe(
+    room: GroupRoomId,
+    onMessage: (m: GroupMessage) => void,
+    onStatus: (live: boolean) => void,
+  ): () => void
+  /**
+   * Checks the live connection right away (instead of on the next 25-second
+   * heartbeat). Phones pause apps in the background, which can silently drop it.
+   */
+  wake(): void
 }
 
 // ---------------------------------------------------------------------------
@@ -186,8 +196,7 @@ export function createSupabaseGroupChat(sb: SupabaseClient): GroupChatApi {
     reviewRequest: (userId, approve) => rpc<void>('leader_review_request', { member_id: userId, approve }),
     setLeader: (userId, make) => rpc<void>('leader_set_leader', { member_id: userId, make }),
 
-    subscribe(room, onMessage, onReconnect) {
-      let subscribedOnce = false
+    subscribe(room, onMessage, onStatus) {
       const handler = (payload: { new: unknown }) => onMessage(payload.new as GroupMessage)
       const filter = `room=eq.${room}`
       const channel = sb
@@ -202,12 +211,15 @@ export function createSupabaseGroupChat(sb: SupabaseClient): GroupChatApi {
           { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter },
           handler,
         )
-        .subscribe((status) => {
-          if (status !== 'SUBSCRIBED') return
-          if (subscribedOnce) onReconnect()
-          subscribedOnce = true
-        })
+        .subscribe((status) => onStatus(status === 'SUBSCRIBED'))
       return () => void sb.removeChannel(channel)
+    },
+
+    wake() {
+      // A heartbeat still waiting for its answer means the connection died
+      // while the app was paused; sending another reconnects at once.
+      if (sb.realtime.isConnected()) void sb.realtime.sendHeartbeat()
+      else sb.realtime.connect()
     },
   }
 }
@@ -480,6 +492,7 @@ export function createDeviceGroupChat(): GroupChatApi {
     subscribe() {
       return () => {}
     },
+    wake() {},
   }
 }
 

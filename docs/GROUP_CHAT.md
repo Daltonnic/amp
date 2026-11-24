@@ -15,8 +15,12 @@ The group comes from two answers in the profile: **man or woman** and **track**
 leave their old group automatically and can join the new one.
 
 It works the same in the iPhone and Android apps and in any web browser
-(phone or computer). New messages arrive live while the app is open, and the
-Group tab shows an unread count. When AMP is closed, people who turned on
+(phone or computer). New messages arrive live while the app is open, with no
+refreshing, and the Group tab shows an unread count. Phones pause apps in the
+background and can quietly drop the live connection, so whenever AMP comes
+back to the screen (or the network comes back) it fetches anything missed at
+once and reconnects; while the connection is down it checks every 15 seconds.
+When AMP is closed, people who turned on
 notifications get a push notification (see
 [PUSH_NOTIFICATIONS.md](PUSH_NOTIFICATIONS.md)).
 

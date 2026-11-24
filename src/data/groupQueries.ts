@@ -8,6 +8,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query'
 import { roomFor } from '@/content/group'
+import { mergeLatest } from '@/lib/groupThread'
 import { useAuth } from '@/lib/auth'
 import { groupChat, type GroupStatus } from './groupChat'
 import { useProfile } from './queries'
@@ -334,30 +335,95 @@ export function useGroupBadge(): number {
   return member ? (unread.data ?? 0) : 0
 }
 
+/** How often to check for messages while the live connection is down. */
+export const CATCH_UP_MS = 15_000
+
 /**
- * Keeps the group up to date while the app is open: new and changed messages
- * arrive live, and the unread badge follows them. Mounted once, app-wide.
+ * Keeps the group up to date while the app is open, with no refreshing: new
+ * and changed messages arrive live, and the unread badge follows them.
+ * Mounted once, app-wide.
+ *
+ * Phones pause apps in the background and can drop the live connection, so
+ * whenever the app comes back (or the connection or network does), it
+ * fetches anything missed. While the connection is down it checks every
+ * 15 seconds.
  */
 export function useGroupLive(room: GroupRoomId | null, active: boolean) {
   const qc = useQueryClient()
   const me = useMyUserId()
   useEffect(() => {
     if (!room || !active || !groupChat.live) return
-    return groupChat.subscribe(
+    let live = false
+    let stopped = false
+    let fetching = false
+
+    const noticed = (message: GroupMessage) => {
+      if (message.kind === 'system') {
+        void qc.invalidateQueries({ queryKey: groupKeys.members(room) })
+        if (message.user_id === me) void qc.invalidateQueries({ queryKey: groupKeys.status(room) })
+      }
+      if (message.user_id !== me) void qc.invalidateQueries({ queryKey: groupKeys.unread(room) })
+    }
+
+    const catchUp = async () => {
+      if (fetching || stopped) return
+      const loaded = qc.getQueryData<Pages>(groupKeys.messages(room))
+      // The thread isn't open yet; it loads fresh when it is.
+      if (!loaded) return void qc.invalidateQueries({ queryKey: groupKeys.unread(room) })
+      fetching = true
+      try {
+        const latest = await groupChat.messages(room, { limit: MESSAGE_PAGE })
+        const data = qc.getQueryData<Pages>(groupKeys.messages(room))
+        if (stopped || !data) return
+        const merged = mergeLatest(data.pages, latest, MESSAGE_PAGE)
+        if (!merged) {
+          void qc.invalidateQueries({ queryKey: groupKeys.messages(room) })
+          void qc.invalidateQueries({ queryKey: groupKeys.unread(room) })
+          return
+        }
+        if (merged.pages !== data.pages)
+          qc.setQueryData<Pages>(groupKeys.messages(room), { ...data, pages: merged.pages })
+        merged.added.forEach(noticed)
+      } catch {
+        // Offline or the server is busy; the next check tries again.
+      } finally {
+        fetching = false
+      }
+    }
+
+    const unsubscribe = groupChat.subscribe(
       room,
       (message) => {
         upsertMessage(qc, room, message)
-        if (message.kind === 'system') {
-          void qc.invalidateQueries({ queryKey: groupKeys.members(room) })
-          if (message.user_id === me) void qc.invalidateQueries({ queryKey: groupKeys.status(room) })
-        }
-        if (message.user_id !== me) void qc.invalidateQueries({ queryKey: groupKeys.unread(room) })
+        noticed(message)
       },
-      () => {
-        void qc.invalidateQueries({ queryKey: groupKeys.messages(room) })
-        void qc.invalidateQueries({ queryKey: groupKeys.unread(room) })
+      (connected) => {
+        live = connected
+        // Also covers anything sent between loading the thread and connecting.
+        if (connected) void catchUp()
       },
     )
+
+    const comeBack = () => {
+      if (document.visibilityState !== 'visible') return
+      groupChat.wake()
+      void catchUp()
+    }
+    document.addEventListener('visibilitychange', comeBack)
+    window.addEventListener('pageshow', comeBack)
+    window.addEventListener('online', comeBack)
+    const timer = window.setInterval(() => {
+      if (!live && document.visibilityState === 'visible') void catchUp()
+    }, CATCH_UP_MS)
+
+    return () => {
+      stopped = true
+      unsubscribe()
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', comeBack)
+      window.removeEventListener('pageshow', comeBack)
+      window.removeEventListener('online', comeBack)
+    }
   }, [room, active, me, qc])
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GroupMessage } from '@/data/types'
-import { buildThread, dayLabel } from '@/lib/groupThread'
+import { buildThread, dayLabel, mergeLatest } from '@/lib/groupThread'
 
 const msg = (id: string, user: string, at: string, kind: GroupMessage['kind'] = 'text'): GroupMessage => ({
   id,
@@ -63,5 +63,44 @@ describe('group thread', () => {
   it('labels older days by weekday, and other years with the year', () => {
     expect(dayLabel(new Date('2026-11-20T10:00:00'), now)).toBe('Friday, Nov 20')
     expect(dayLabel(new Date('2025-12-31T10:00:00'), now)).toBe('Dec 31, 2025')
+  })
+})
+
+describe('catching up on missed messages', () => {
+  const at = (minute: number) => `2026-11-24T09:${String(minute).padStart(2, '0')}:00Z`
+  // Pages are newest first, like the thread's loaded pages.
+  const loaded = [[msg('3', 'a', at(3)), msg('2', 'b', at(2))], [msg('1', 'a', at(1))]]
+
+  it('adds messages sent while away, newest first', () => {
+    const latest = [msg('5', 'b', at(5)), msg('4', 'a', at(4)), msg('3', 'a', at(3))]
+    const merged = mergeLatest(loaded, latest, 40)!
+    expect(merged.pages[0]!.map((m) => m.id)).toEqual(['5', '4', '3', '2'])
+    expect(merged.pages[1]!.map((m) => m.id)).toEqual(['1'])
+    expect(merged.added.map((m) => m.id)).toEqual(['5', '4'])
+  })
+
+  it('updates likes and deletes made while away', () => {
+    const liked = { ...msg('3', 'a', at(3)), liked_by: ['b'] }
+    const deleted = { ...msg('2', 'b', at(2)), deleted_at: at(6) }
+    const merged = mergeLatest(loaded, [liked, deleted], 40)!
+    expect(merged.added).toEqual([])
+    expect(merged.pages[0]![0]!.liked_by).toEqual(['b'])
+    expect(merged.pages[0]![1]!.deleted_at).toBe(at(6))
+  })
+
+  it('changes nothing when nothing happened', () => {
+    const merged = mergeLatest(loaded, [], 40)!
+    expect(merged.pages).toBe(loaded)
+    expect(merged.added).toEqual([])
+  })
+
+  it('asks for a reload when a full page arrived and some may be missing', () => {
+    const flood = [msg('9', 'b', at(9)), msg('8', 'b', at(8))]
+    expect(mergeLatest(loaded, flood, 2)).toBeNull()
+  })
+
+  it('fills an empty thread', () => {
+    const merged = mergeLatest([[]], [msg('1', 'a', at(1))], 40)!
+    expect(merged.pages[0]!.map((m) => m.id)).toEqual(['1'])
   })
 })
