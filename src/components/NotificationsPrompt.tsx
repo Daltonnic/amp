@@ -19,10 +19,19 @@ function wasDismissed() {
 }
 
 /** One-tap "Turn on notifications" on Home, until it's on (or dismissed on this device). */
-export function NotificationsPrompt() {
+export function NotificationsPrompt({
+  title = 'Get notified when your group posts',
+  description = 'You’ll get a notification even when AMP is closed. It stays private: just “New message in your group”, never the message itself unless you choose.',
+  force = false,
+}: {
+  title?: string
+  description?: string
+  /** Show even if "Not now" was chosen on Home (e.g. while waiting for approval). */
+  force?: boolean
+} = {}) {
   const push = usePush()
   const [dismissed, setDismissed] = useState(wasDismissed)
-  if (dismissed || !push.available || push.state !== 'off') return null
+  if ((dismissed && !force) || !push.available || push.state !== 'off') return null
 
   const dismiss = () => {
     try {
@@ -47,7 +56,11 @@ export function NotificationsPrompt() {
     })
 
   return (
-    <Card className="relative border-primary/20 bg-primary/5 p-5 pr-12">
+    <Card
+      role="region"
+      aria-label="Notifications"
+      className="relative border-primary/20 bg-primary/5 p-5 pr-12"
+    >
       <button
         type="button"
         onClick={dismiss}
@@ -61,11 +74,8 @@ export function NotificationsPrompt() {
           <Bell className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 space-y-1">
-          <h2 className="font-semibold text-foreground">Get notified when your group posts</h2>
-          <p className="text-sm text-muted-foreground">
-            You’ll get a notification even when AMP is closed. It stays private: just “New message in your
-            group”, never the message itself unless you choose.
-          </p>
+          <h2 className="font-semibold text-foreground">{title}</h2>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
       <Button className="mt-4 w-full" onClick={turnOn} disabled={push.busy}>

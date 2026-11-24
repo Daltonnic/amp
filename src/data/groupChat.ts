@@ -5,7 +5,7 @@ import { publicName } from '@/lib/names'
 import { getSupabase } from '@/lib/supabase'
 import { DEVICE_USER_ID } from './deviceBackend'
 import { RateLimitedError } from './backend'
-import type { GroupMember, GroupMessage, GroupReport, GroupRoomId, Profile } from './types'
+import type { GroupMember, GroupMessage, GroupReport, GroupRoomId, LeaderPerson, Profile } from './types'
 
 /**
  * Group chat. Every change goes through a database function
@@ -16,8 +16,12 @@ import type { GroupMember, GroupMessage, GroupReport, GroupRoomId, Profile } fro
 export interface GroupStatus {
   /** The person's membership in the group their profile belongs in, if active. */
   member: GroupMember | null
-  /** A moderator removed them from that group. */
+  /** A leader removed them from that group. */
   removed: boolean
+  /** They asked to join and are waiting for a leader. */
+  pending: boolean
+  /** A leader declined their request (they can ask again). */
+  declined: boolean
 }
 
 export interface GroupChatApi {
@@ -44,6 +48,14 @@ export interface GroupChatApi {
   reports(): Promise<GroupReport[]>
   removeMember(userId: string, reason: string): Promise<void>
   resolveReport(id: string): Promise<void>
+  /** User ids of every leader (shown in gold). */
+  leaders(): Promise<string[]>
+  /** Leaders: everyone with an account, with their group status. */
+  leaderPeople(): Promise<LeaderPerson[]>
+  /** Leaders: approve or decline a request to join a group. */
+  reviewRequest(userId: string, approve: boolean): Promise<void>
+  /** Leaders: make someone a leader, or step them down. */
+  setLeader(userId: string, make: boolean): Promise<void>
   /**
    * Live updates: `onMessage` gets each new or changed message, `onReconnect`
    * fires when the connection comes back (so missed messages can be fetched).
@@ -77,7 +89,7 @@ export function createSupabaseGroupChat(sb: SupabaseClient): GroupChatApi {
 
     async status(room) {
       const uid = await myId()
-      if (!uid) return { member: null, removed: false }
+      if (!uid) return { member: null, removed: false, pending: false, declined: false }
       const [member, ban] = await Promise.all([
         sb.from('chat_members').select('*').eq('user_id', uid).maybeSingle(),
         sb.from('chat_bans').select('room').eq('user_id', uid).eq('room', room).maybeSingle(),
@@ -86,8 +98,13 @@ export function createSupabaseGroupChat(sb: SupabaseClient): GroupChatApi {
       fail(ban.error)
       const row = member.data as GroupMember | null
       const removed = Boolean(ban.data)
-      const active = row && !row.left_at && row.room === room && !removed ? row : null
-      return { member: active, removed }
+      const here = row && row.room === room && !removed ? row : null
+      return {
+        member: here && here.status === 'active' && !here.left_at ? here : null,
+        removed,
+        pending: here?.status === 'pending',
+        declined: here?.status === 'declined',
+      }
     },
 
     join: () => rpc<GroupMember>('chat_join'),
@@ -160,6 +177,15 @@ export function createSupabaseGroupChat(sb: SupabaseClient): GroupChatApi {
     removeMember: (userId, reason) => rpc<void>('chat_remove_member', { member_id: userId, reason }),
     resolveReport: (id) => rpc<void>('chat_resolve_report', { report_id: id }),
 
+    async leaders() {
+      const { data, error } = await sb.from('leaders').select('user_id')
+      fail(error)
+      return (data as { user_id: string }[]).map((r) => r.user_id)
+    },
+    leaderPeople: () => rpc<LeaderPerson[]>('leader_people'),
+    reviewRequest: (userId, approve) => rpc<void>('leader_review_request', { member_id: userId, approve }),
+    setLeader: (userId, make) => rpc<void>('leader_set_leader', { member_id: userId, make }),
+
     subscribe(room, onMessage, onReconnect) {
       let subscribedOnce = false
       const handler = (payload: { new: unknown }) => onMessage(payload.new as GroupMessage)
@@ -192,6 +218,8 @@ export function createSupabaseGroupChat(sb: SupabaseClient): GroupChatApi {
 
 const KEY = {
   members: 'amp.device.group_members',
+  /** On-device the one person here leads, unless a test says otherwise. */
+  leaders: 'amp.device.leaders',
   messages: 'amp.device.group_messages',
   blocks: 'amp.device.group_blocks',
   reports: 'amp.device.group_reports',
@@ -213,7 +241,14 @@ function deviceProfile(): Profile | null {
 export function createDeviceGroupChat(): GroupChatApi {
   const me = DEVICE_USER_ID
   const now = () => new Date().toISOString()
-  const myMember = () => load<GroupMember>(KEY.members).find((m) => m.user_id === me) ?? null
+  const myMember = () => {
+    const m = load<GroupMember>(KEY.members).find((x) => x.user_id === me)
+    // Rows saved before join approvals existed count as active.
+    return m ? { ...m, status: m.status ?? 'active', requested_at: m.requested_at ?? null } : null
+  }
+  const leaderIds = (): string[] =>
+    localStorage.getItem(KEY.leaders) === null ? [me] : load<string>(KEY.leaders)
+  const isLeader = () => leaderIds().includes(me)
   const activeRoom = (): GroupRoomId => {
     const p = deviceProfile()
     const room = p && roomFor(p.track, p.gender)
@@ -251,7 +286,14 @@ export function createDeviceGroupChat(): GroupChatApi {
 
     async status(room) {
       const m = myMember()
-      return { member: m && !m.left_at && m.room === room ? m : null, removed: false }
+      const here = m && m.room === room ? m : null
+      return {
+        member:
+          here && here.status !== 'pending' && here.status !== 'declined' && !here.left_at ? here : null,
+        removed: false,
+        pending: here?.status === 'pending',
+        declined: here?.status === 'declined',
+      }
     },
 
     async join() {
@@ -267,18 +309,24 @@ export function createDeviceGroupChat(): GroupChatApi {
       })
       if (!name) throw new Error('Add the name you want the group to see first.')
       const prior = myMember()
+      const admit =
+        isLeader() || (prior?.room === room && prior.status !== 'pending' && prior.status !== 'declined')
       const member: GroupMember = {
         user_id: me,
         room,
         display_name: name,
         role: 'member',
+        status: admit ? 'active' : 'pending',
+        requested_at: admit ? null : now(),
         joined_at: prior && !prior.left_at && prior.room === room ? prior.joined_at : now(),
         agreed_at: now(),
         last_read_at: now(),
         left_at: null,
       }
       save(KEY.members, [...load<GroupMember>(KEY.members).filter((m) => m.user_id !== me), member])
-      if (!prior || prior.left_at || prior.room !== room) addSystem(room, 'joined the group')
+      if (admit && (!prior || prior.left_at || prior.room !== room || prior.status !== 'active')) {
+        addSystem(room, 'joined the group')
+      }
       return member
     },
 
@@ -381,6 +429,49 @@ export function createDeviceGroupChat(): GroupChatApi {
 
     async reports() {
       return []
+    },
+
+    async leaders() {
+      return leaderIds()
+    },
+    async leaderPeople() {
+      const p = deviceProfile()
+      const m = myMember()
+      const room = p ? roomFor(p.track, p.gender) : null
+      return [
+        {
+          user_id: me,
+          email: '',
+          first_name: p?.display_name ?? '',
+          last_name: p?.last_name ?? '',
+          shown_name: m?.display_name ?? '',
+          gender: p?.gender ?? null,
+          track: p?.track ?? null,
+          room,
+          member_status:
+            !m || m.room !== room
+              ? 'none'
+              : m.status === 'active'
+                ? m.left_at
+                  ? 'left'
+                  : 'member'
+                : m.status,
+          requested_at: m?.requested_at ?? null,
+          joined_at: m?.joined_at ?? null,
+          is_leader: isLeader(),
+          created_at: p?.created_at ?? now(),
+        },
+      ]
+    },
+    async reviewRequest() {
+      throw new Error('There’s nobody else on this device to approve.')
+    },
+    async setLeader(userId, make) {
+      if (!make && leaderIds().length <= 1) throw new Error('There must always be at least one leader.')
+      save(
+        KEY.leaders,
+        make ? [...new Set([...leaderIds(), userId])] : leaderIds().filter((u) => u !== userId),
+      )
     },
     async removeMember() {
       throw new Error('Only moderators can remove people.')

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { GROUP_GUIDELINES, GROUP_ROOMS } from '@/content/group'
 import { groupChat } from '@/data/groupChat'
-import { useJoinGroup } from '@/data/groupQueries'
+import { useIsLeader, useJoinGroup } from '@/data/groupQueries'
 import { useUpdateProfile } from '@/data/queries'
 import type { GroupRoomId, Profile } from '@/data/types'
 import { publicName } from '@/lib/names'
@@ -22,6 +22,8 @@ export function JoinGroup({ room, profile }: { room: GroupRoomId; profile: Profi
   const join = useJoinGroup(room)
   const busy = updateProfile.isPending || join.isPending
   const shown = publicName(name)
+  // Leaders go straight in; everyone else asks and a leader approves.
+  const isLeader = useIsLeader()
 
   const submit = async () => {
     try {
@@ -52,7 +54,8 @@ export function JoinGroup({ room, profile }: { room: GroupRoomId; profile: Profi
       <Card className="flex items-start gap-3 border-primary/15 bg-primary/5 p-4">
         <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
         <p className="text-sm text-foreground/80">
-          Only members of {info.name} can see this group. What you share stays inside it.
+          Only members of {info.name} can see this group, and a leader approves each new member. What you
+          share stays inside it.
         </p>
       </Card>
 
@@ -94,7 +97,7 @@ export function JoinGroup({ room, profile }: { room: GroupRoomId; profile: Profi
       )}
 
       <Button size="lg" className="w-full" disabled={!agreed || !shown || busy} onClick={() => void submit()}>
-        {busy ? 'Joining…' : 'Join the group'}
+        {busy ? 'Sending…' : isLeader ? 'Join the group' : 'Ask to join'}
       </Button>
     </div>
   )

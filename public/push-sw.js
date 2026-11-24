@@ -21,11 +21,12 @@ self.addEventListener('push', (event) => {
     (async () => {
       let body = data.body || 'New message in your group'
       let count = 1
-      if (data.discreet !== false) {
-        // Discreet notifications stack into one: "3 new messages in your group".
+      const stack = data.stack || (data.discreet !== false ? '{n} new messages in your group' : '')
+      if (stack) {
+        // Notifications with the same tag stack into one: "3 new messages in your group".
         const existing = await self.registration.getNotifications({ tag })
         count = existing.reduce((n, x) => Math.max(n, (x.data && x.data.count) || 1), 0) + 1
-        if (count > 1) body = `${count} new messages in your group`
+        if (count > 1) body = stack.replace('{n}', String(count))
       }
       await self.registration.showNotification(data.title || 'AMP', {
         body,

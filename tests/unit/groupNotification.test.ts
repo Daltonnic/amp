@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { groupNotification } from '../../supabase/functions/_shared/groupNotification'
+import {
+  groupNotification,
+  joinRequestNotification,
+  welcomeNotification,
+} from '../../supabase/functions/_shared/groupNotification'
 
 const base = {
   messageId: 'm1',
@@ -19,6 +23,7 @@ describe('group notification wording', () => {
       url: '/group',
       tag: 'amp-group',
       discreet: true,
+      stack: '{n} new messages in your group',
     })
     expect(JSON.stringify(n)).not.toMatch(/Recovery|Mark|Rough/)
   })
@@ -38,5 +43,23 @@ describe('group notification wording', () => {
     const n = groupNotification({ ...base, preview: true, body: 'word '.repeat(100) })
     expect(n.body.length).toBeLessThanOrEqual('Mark T.: '.length + 140)
     expect(n.body.endsWith('…')).toBe(true)
+  })
+})
+
+describe('leader and welcome notifications', () => {
+  it('tells leaders about a request without names unless they chose previews', () => {
+    const quiet = joinRequestNotification({ name: 'Ben T.', roomName: 'Men in Recovery', preview: false })
+    expect(quiet.body).toBe('Someone asked to join a group')
+    expect(JSON.stringify(quiet)).not.toMatch(/Ben|Recovery/)
+    expect(quiet.url).toBe('/leaders')
+    const full = joinRequestNotification({ name: 'Ben T.', roomName: 'Men in Recovery', preview: true })
+    expect(full.body).toBe('Ben T. asked to join Men in Recovery.')
+  })
+
+  it('welcomes an approved person, opening the group', () => {
+    const quiet = welcomeNotification({ roomName: 'Women in Recovery', preview: false })
+    expect(quiet.title).toBe('AMP')
+    expect(JSON.stringify(quiet)).not.toMatch(/Women/)
+    expect(quiet.url).toBe('/group')
   })
 })

@@ -11,7 +11,7 @@ import { paths } from '@/app/routes'
  * which is this page: https://<your-domain>/privacy
  */
 
-const UPDATED = 'November 24, 2026'
+const UPDATED = 'November 25, 2026'
 
 function H({ children }: { children: ReactNode }) {
   return <h2 className="mb-2 mt-6 font-display text-lg font-semibold text-foreground">{children}</h2>
@@ -48,8 +48,9 @@ export default function Privacy() {
               initials, or a nickname).
             </li>
             <li>
-              What you choose to record: daily check-ins, journal entries, trigger logs, and which grounding
-              tools you use.
+              What you choose to record: daily check-ins, journal entries, trigger logs, which grounding tools
+              you use, and your freedom counter's start date (visible only to you unless you share a
+              milestone).
             </li>
             <li>Accountability contacts you add (name, email, phone, relationship).</li>
             <li>
@@ -85,8 +86,13 @@ export default function Privacy() {
               in the app.
             </li>
             <li>
-              Moderators of your group can remove messages and remove people who break the group guidelines.
-              When you report a message, moderators see the message and your reason, but not who reported it.
+              Ministry leaders approve each new member. To do that, leaders can see your name, email, which
+              group you belong to, and whether you've asked to join. Leaders can only read the messages of the
+              group they're in.
+            </li>
+            <li>
+              Leaders in your group can remove messages and remove people who break the group guidelines. When
+              you report a message, they see the message and your reason, but not who reported it.
             </li>
             <li>
               Blocking someone hides their messages from you; they are not told. You can unblock them in

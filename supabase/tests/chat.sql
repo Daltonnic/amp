@@ -73,10 +73,17 @@ do $$ begin
   end;
 end $$;
 
--- Everyone joins their own group.
+-- Paul is the first leader (set with SQL, as in docs/GROUP_CHAT.md).
+reset role;
+insert into public.leaders (user_id) values ('c0000000-0000-4000-8000-000000000004');
+set role authenticated;
+
+-- Everyone asks to join their own group. Paul, a leader, goes straight in;
+-- everyone else waits for a leader.
 do $$
 declare
   m public.chat_members;
+  waiting uuid;
   ids text[] := array['c0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000002',
                       'c0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000004',
                       'c0000000-0000-4000-8000-000000000005', 'c0000000-0000-4000-8000-000000000006'];
@@ -86,17 +93,62 @@ begin
     perform pg_temp.act_as(ids[i]);
     m := public.chat_join();
     if m.room <> rooms[i] then raise exception 'joined % instead of %', m.room, rooms[i]; end if;
+    if m.status <> (case when i = 4 then 'active' else 'pending' end) then
+      raise exception 'user % joined as %', i, m.status;
+    end if;
   end loop;
+
+  -- Waiting people can't read or post, and can't approve themselves.
+  perform pg_temp.act_as(ids[1]);
+  if (select count(*) from public.chat_messages) <> 0 then raise exception 'pending member can read'; end if;
+  begin
+    perform public.chat_send('hello');
+    raise exception 'pending member could post';
+  exception when insufficient_privilege then null;
+  end;
+  if (select count(*) from public.leader_people()) <> 0 then raise exception 'non-leader sees people list'; end if;
+  begin
+    perform public.leader_review_request(ids[1]::uuid, true);
+    raise exception 'non-leader approved a request';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.leader_set_leader(ids[1]::uuid, true);
+    raise exception 'non-leader made a leader';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Paul's group can't see people who are still waiting.
+  perform pg_temp.act_as(ids[4]);
+  if (select count(*) from public.chat_members where user_id <> ids[4]::uuid) <> 0 then
+    raise exception 'waiting people visible to the group';
+  end if;
+
+  -- Paul sees every request (all groups) and approves them.
+  if (select count(*) from public.leader_people() where member_status = 'pending') <> 5 then
+    raise exception 'leader should see 5 requests';
+  end if;
+  if (select email from public.leader_people() where user_id = ids[5]::uuid) <> 'woman@example.com' then
+    raise exception 'leader should see emails';
+  end if;
+  foreach waiting in array array[ids[1], ids[2], ids[3], ids[5], ids[6]]::uuid[] loop
+    perform public.leader_review_request(waiting, true);
+  end loop;
+  begin
+    perform public.leader_review_request(ids[1]::uuid, true);
+    raise exception 'approved twice';
+  exception when raise_exception then
+    if sqlerrm not like '%already handled%' then raise; end if;
+  end;
+
   perform pg_temp.act_as(ids[1]);
   if (select display_name from public.chat_members where user_id = ids[1]::uuid) <> 'David M.' then
     raise exception 'display name not derived from profile';
   end if;
+  if (select count(*) from public.chat_messages where kind = 'system' and body = 'joined the group') <> 4 then
+    raise exception 'approved members should be announced in their group';
+  end if;
 end $$;
-
--- Make Paul a moderator (done with SQL, never from the app).
-reset role;
-update public.chat_members set role = 'moderator' where user_id = 'c0000000-0000-4000-8000-000000000004';
-set role authenticated;
 
 -- Members can't promote themselves.
 select pg_temp.act_as('c0000000-0000-4000-8000-000000000002');
@@ -298,6 +350,57 @@ begin
   if exists (select 1 from public.push_subscriptions where endpoint = 'https://push.example.org/paul') then
     raise exception 'push: unregister failed';
   end if;
+end $$;
+
+-- A declined request can be made again; it waits for a leader again.
+reset role;
+insert into auth.users (id, email) values ('c0000000-0000-4000-8000-000000000007', 'newcomer@example.com');
+set role authenticated;
+select pg_temp.act_as('c0000000-0000-4000-8000-000000000007');
+insert into public.profiles (track, gender, display_name) values ('spouse', 'woman', 'Joy');
+select public.chat_join();
+select pg_temp.act_as('c0000000-0000-4000-8000-000000000004');
+select public.leader_review_request('c0000000-0000-4000-8000-000000000007', false);
+select pg_temp.act_as('c0000000-0000-4000-8000-000000000007');
+do $$ begin
+  if (select status from public.chat_members where user_id = 'c0000000-0000-4000-8000-000000000007') <> 'declined' then
+    raise exception 'decline not recorded';
+  end if;
+  if (select count(*) from public.chat_messages) <> 0 then raise exception 'declined person can read'; end if;
+  if (public.chat_join()).status <> 'pending' then raise exception 'asking again should wait for a leader'; end if;
+end $$;
+
+-- Leaders: promote, step down, and always keep one.
+select pg_temp.act_as('c0000000-0000-4000-8000-000000000004');
+do $$ begin
+  begin
+    perform public.leader_set_leader('c0000000-0000-4000-8000-000000000004', false);
+    raise exception 'the last leader stepped down';
+  exception when raise_exception then
+    if sqlerrm not like '%at least one leader%' then raise; end if;
+  end;
+  -- Making Joy a leader also lets her into her group.
+  perform public.leader_set_leader('c0000000-0000-4000-8000-000000000007', true);
+  if (select count(*) from public.leaders) <> 2 then raise exception 'promotion failed'; end if;
+end $$;
+select pg_temp.act_as('c0000000-0000-4000-8000-000000000007');
+do $$ begin
+  if not public.is_leader() then raise exception 'Joy should be a leader'; end if;
+  if (select status from public.chat_members where user_id = 'c0000000-0000-4000-8000-000000000007') <> 'active' then
+    raise exception 'new leader should be in her group';
+  end if;
+  -- Leaders moderate their own group.
+  if not public.i_moderate_chat() then raise exception 'leader should moderate her group'; end if;
+  perform public.leader_set_leader('c0000000-0000-4000-8000-000000000004', false);
+  if (select count(*) from public.leaders) <> 1 then raise exception 'step-down failed'; end if;
+end $$;
+select pg_temp.act_as('c0000000-0000-4000-8000-000000000006');
+do $$ begin
+  begin
+    perform public.chat_remove_member('c0000000-0000-4000-8000-000000000007', '');
+    raise exception 'a member removed a leader';
+  exception when insufficient_privilege then null;
+  end;
 end $$;
 
 -- Signed-out (anon) callers can't use any of it.

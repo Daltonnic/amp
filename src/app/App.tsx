@@ -22,6 +22,7 @@ const TriggerAwareness = lazy(() => import('@/pages/TriggerAwareness'))
 const IdentityFormation = lazy(() => import('@/pages/IdentityFormation'))
 const Accountability = lazy(() => import('@/pages/Accountability'))
 const Settings = lazy(() => import('@/pages/Settings'))
+const Leaders = lazy(() => import('@/pages/Leaders'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
@@ -53,6 +54,7 @@ const router = createBrowserRouter([
           { path: paths.identity, element: <IdentityFormation /> },
           { path: paths.accountability, element: <Accountability /> },
           { path: paths.settings, element: <Settings /> },
+          { path: paths.leaders, element: <Leaders /> },
         ],
       },
       ...Object.entries(legacyRedirects).map(([from, to]) => ({

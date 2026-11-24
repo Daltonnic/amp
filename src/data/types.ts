@@ -24,6 +24,12 @@ export interface Profile {
   /** How the name shows to others in the group. See src/lib/names.ts. */
   name_display: NameDisplay
   nickname: string
+  /** First day (yyyy-MM-dd) of the current stretch of freedom; null until started. */
+  freedom_start: string | null
+  /** Longest stretch so far, in days. */
+  freedom_best_days: number
+  /** Hide the freedom counter on Home. */
+  freedom_hidden: boolean
   daily_reminders: boolean
   /** "HH:MM" (Postgres returns "HH:MM:SS"; both are accepted). */
   reminder_time: string
@@ -187,6 +193,9 @@ export interface GroupMember {
   /** The name the group sees, derived on the server from the profile. */
   display_name: string
   role: 'member' | 'moderator'
+  /** pending: waiting for a leader; declined: a leader said no (they can ask again). */
+  status: 'pending' | 'active' | 'declined'
+  requested_at: string | null
   joined_at: string
   agreed_at: string
   last_read_at: string
@@ -217,4 +226,23 @@ export interface GroupReport {
   reason: string
   created_at: string
   resolved_at: string | null
+}
+
+/** A row on the Leaders page (public.leader_people). */
+export interface LeaderPerson {
+  user_id: string
+  email: string
+  first_name: string
+  last_name: string
+  /** The name their group sees. */
+  shown_name: string
+  gender: Gender | null
+  track: Track | null
+  /** The group their profile belongs in. */
+  room: GroupRoomId | null
+  member_status: 'none' | 'pending' | 'member' | 'left' | 'declined' | 'removed'
+  requested_at: string | null
+  joined_at: string | null
+  is_leader: boolean
+  created_at: string
 }

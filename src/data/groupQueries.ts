@@ -24,6 +24,8 @@ export const groupKeys = {
   unread: (room: GroupRoomId) => ['group', 'unread', room] as const,
   blocks: ['group', 'blocks'] as const,
   reports: (room: GroupRoomId) => ['group', 'reports', room] as const,
+  leaders: ['leaders'] as const,
+  people: ['leaders', 'people'] as const,
 }
 
 type Pages = InfiniteData<GroupMessage[], string | undefined>
@@ -84,7 +86,13 @@ export function useJoinGroup(room: GroupRoomId | null) {
   return useMutation({
     mutationFn: () => groupChat.join(),
     onSuccess: (member) => {
-      qc.setQueryData<GroupStatus>(groupKeys.status(member.room), { member, removed: false })
+      const active = member.status === 'active'
+      qc.setQueryData<GroupStatus>(groupKeys.status(member.room), {
+        member: active ? member : null,
+        removed: false,
+        pending: member.status === 'pending',
+        declined: false,
+      })
       if (room) void qc.invalidateQueries({ queryKey: groupKeys.members(room) })
       void qc.invalidateQueries({ queryKey: groupKeys.messages(member.room) })
     },
@@ -97,7 +105,12 @@ export function useLeaveGroup(room: GroupRoomId | null) {
     mutationFn: () => groupChat.leave(),
     onSuccess: () => {
       if (!room) return
-      qc.setQueryData<GroupStatus>(groupKeys.status(room), { member: null, removed: false })
+      qc.setQueryData<GroupStatus>(groupKeys.status(room), {
+        member: null,
+        removed: false,
+        pending: false,
+        declined: false,
+      })
       qc.removeQueries({ queryKey: groupKeys.messages(room) })
       qc.setQueryData(groupKeys.unread(room), 0)
     },
@@ -346,4 +359,59 @@ export function useGroupLive(room: GroupRoomId | null, active: boolean) {
       },
     )
   }, [room, active, me, qc])
+}
+
+// ---------------------------------------------------------------------------
+// Leaders
+// ---------------------------------------------------------------------------
+
+/** Everyone who leads, as a set of user ids. */
+export function useLeaders() {
+  return useQuery({
+    queryKey: groupKeys.leaders,
+    queryFn: async () => new Set(await groupChat.leaders()),
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useIsLeader(): boolean {
+  const me = useMyUserId()
+  const leaders = useLeaders()
+  return Boolean(me && leaders.data?.has(me))
+}
+
+/** Leaders page: everyone with an account. */
+export function useLeaderPeople(enabled: boolean) {
+  return useQuery({
+    queryKey: groupKeys.people,
+    queryFn: () => groupChat.leaderPeople(),
+    enabled,
+    refetchInterval: 60_000,
+  })
+}
+
+/** Waiting requests, for the badge on the Leaders menu item. */
+export function useJoinRequestCount(): number {
+  const isLeader = useIsLeader()
+  const people = useLeaderPeople(isLeader)
+  return isLeader ? (people.data ?? []).filter((p) => p.member_status === 'pending').length : 0
+}
+
+export function useReviewRequest() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ userId, approve }: { userId: string; approve: boolean }) =>
+      groupChat.reviewRequest(userId, approve),
+    onSettled: () => void qc.invalidateQueries({ queryKey: groupKeys.people }),
+  })
+}
+
+export function useSetLeader() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ userId, make }: { userId: string; make: boolean }) => groupChat.setLeader(userId, make),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: groupKeys.leaders })
+    },
+  })
 }

@@ -47,9 +47,11 @@ import {
   useGroupBlocks,
   useGroupMembers,
   useGroupStatus,
+  useIsLeader,
   useLeaveGroup,
   useMyRoom,
 } from '@/data/groupQueries'
+import { LeaderBadge } from '@/components/group/Avatar'
 import {
   biometryInfo,
   clearLock,
@@ -78,18 +80,21 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
   const { state } = useAuth()
   const [name, setName] = useState(() => namePartsOf(p))
   const [gender, setGender] = useState<Gender | null>(p.gender ?? null)
+  const [freedomShown, setFreedomShown] = useState(!p.freedom_hidden)
   const [reminders, setReminders] = useState(p.daily_reminders)
   const [reminderTime, setReminderTime] = useState(p.reminder_time.slice(0, 5))
 
   const nameChanged =
     JSON.stringify(profileNamePatch(name)) !== JSON.stringify(profileNamePatch(namePartsOf(p)))
   const currentRoom = useMyRoom()
+  const isLeader = useIsLeader()
   const groupStatus = useGroupStatus(currentRoom)
   const inGroup = Boolean(groupStatus.data?.member)
   const movesGroup = inGroup && currentRoom !== roomFor(p.track, gender)
   const dirty =
     nameChanged ||
     gender !== (p.gender ?? null) ||
+    freedomShown !== !p.freedom_hidden ||
     reminders !== p.daily_reminders ||
     reminderTime !== p.reminder_time.slice(0, 5)
 
@@ -100,6 +105,7 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
         patch: {
           ...profileNamePatch(name),
           gender,
+          freedom_hidden: !freedomShown,
           daily_reminders: reminders,
           reminder_time: reminderTime,
         },
@@ -150,6 +156,20 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
           )}
         </div>
         <Row title="Track" subtitle={trackLabel(p.track, gender)} />
+        {p.track === 'men' && (
+          <Row title="Freedom counter" subtitle="Show your days of freedom on Home (only you can see it)">
+            <Switch
+              checked={freedomShown}
+              onCheckedChange={setFreedomShown}
+              aria-label="Show freedom counter"
+            />
+          </Row>
+        )}
+        {isLeader && (
+          <Row title="Role" subtitle="You can approve members and choose leaders (More → Leaders)">
+            <LeaderBadge />
+          </Row>
+        )}
         {state.status === 'signed-in' && state.email && <Row title="Signed in as" subtitle={state.email} />}
       </Section>
 

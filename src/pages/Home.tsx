@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { paths } from '@/app/routes'
 import { AboutYouPrompt } from '@/components/AboutYouPrompt'
+import { FreedomCard } from '@/components/FreedomCard'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { NotificationsPrompt } from '@/components/NotificationsPrompt'
 import { PullToRefresh } from '@/components/PullToRefresh'
@@ -73,6 +74,7 @@ export default function Home() {
         <InstallPrompt />
         <QuickActions onHelp={() => setHelpOpen(true)} />
         <Encouragement track={track} />
+        <FreedomCard profile={profile.data} onReachOut={() => setHelpOpen(true)} />
         <WeeklyInsights track={track} />
         <TodayCheckInCard checkIn={today.data ?? null} />
         <TodaysFocus track={track} />

@@ -49,29 +49,41 @@ The name shown in the group is worked out on the server from the profile
 (`public.public_name()`), so nobody can post under a name they didn't choose,
 and a name change updates every message straight away.
 
-## Moderators
+## Leaders
 
-Moderators get a **Moderator** badge, a **Reports** button in the group
-header, and can delete any message or remove a person from the group. Someone
-who is removed can't see the group or rejoin it. Everything else in the app
-keeps working for them.
+Leaders run the groups. They show in **gold** everywhere: a gold ring around
+their initials, a **Leader** tag next to their name, and a soft gold message
+bubble. Leaders have a **Leaders** page (More → Leaders) where they:
 
-There are no moderators until you make some. Each group needs its own: men
-moderate the men's groups and women the women's groups, because nobody can see
-a group they aren't in.
+- **Approve or decline requests** to join any of the four groups. Everyone who
+  isn't a leader asks to join and waits; leaders get a notification when
+  someone asks, and the person gets one when they're approved. Leaders see each
+  person's chosen name, full name, email and group. A declined person can ask
+  again.
+- **See everyone** with an account and whether they're in a group.
+- **Make other people leaders**, or step someone down. There's always at least
+  one leader.
 
-To make someone a moderator, they first join their group in the app. Then, in
-the Supabase dashboard → **SQL Editor**, run (with their sign-in email):
+In the group they belong to, leaders also moderate: a **Reports** button in the
+group header, deleting any message, and removing people (who then can't see
+the group or rejoin it). Leaders can't be removed from a group; step them down
+first. Each group stays private: leaders only read the group they're in, so
+the women's groups need a woman leader to review their reports. Approving join
+requests works for every group.
+
+Leaders join their own group without waiting. People who were in a group
+before approvals existed stayed in it. Changing man/woman or track moves
+someone out of their group, and joining the new one needs approval.
+
+The first leaders were set with SQL. To add one that way (for example if every
+leader stepped away), in the Supabase dashboard → **SQL Editor**:
 
 ```sql
-update public.chat_members
-set role = 'moderator'
-where user_id = (select id from auth.users where email = 'their-email@example.com');
+insert into public.leaders (user_id)
+select id from auth.users where email = 'their-email@example.com';
 ```
 
-To make them a regular member again, run the same with `role = 'member'`.
-
-To let a removed person back in:
+To let a removed person back into their group:
 
 ```sql
 delete from public.chat_bans
@@ -84,9 +96,9 @@ Apple (App Review Guideline 1.2) and Google Play require apps with
 user-generated content to have: agreement to terms before posting, a way to
 report content, a way to block people, and moderation that acts on reports.
 All of these are built in: the guidelines must be accepted before joining,
-and reporting, blocking, moderators and auto-hiding after three reports are
-all included. Keep at least one active moderator per group before
-launch, and put a contact email in the privacy policy
+and reporting, blocking, leaders who moderate, approval of new members and
+auto-hiding after three reports are all included. Keep at least one leader in
+each group before launch, and put a contact email in the privacy policy
 (`VITE_SUPPORT_EMAIL`).
 
 Other safeguards:
@@ -99,11 +111,9 @@ Other safeguards:
   the person's own group. `supabase/tests/chat.sql` tests all of this.
 - Deleting an account deletes every message that person posted.
 
-**Man or woman is self-reported.** Someone could change it in Settings to get
-into a different group. Moderators are the safeguard: they see when people join
-("… joined the group") and can remove anyone. If this becomes a problem, a
-next step is to have moderators approve new members before they can see the
-group.
+**Man or woman is self-reported.** Someone could change it in Settings, but
+that takes them out of their group, and a leader has to approve them into the
+new one.
 
 ## Not included yet
 

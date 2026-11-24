@@ -5,6 +5,7 @@ import {
   BookOpen,
   CircleAlert,
   ClipboardCheck,
+  Crown,
   House,
   Library,
   Menu,
@@ -18,7 +19,7 @@ import type { LucideIcon } from 'lucide-react'
 import { paths } from '@/app/routes'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/dialog'
 import { DialogDescription, DialogTitle } from '@radix-ui/react-dialog'
-import { useGroupBadge } from '@/data/groupQueries'
+import { useGroupBadge, useIsLeader, useJoinRequestCount } from '@/data/groupQueries'
 import { useLibrary } from '@/data/queries'
 import { hapticTap } from '@/lib/native'
 import { cn } from '@/lib/utils'
@@ -49,11 +50,16 @@ export function TabBar() {
   const navigate = useNavigate()
   const library = useLibrary()
   const unread = useGroupBadge()
+  const isLeader = useIsLeader()
+  const requests = useJoinRequestCount()
   // The Library is admin-published content. Until at least one article is
   // published it stays out of the menu rather than showing an empty section
   // (App Review rejects placeholder content).
   const hasArticles = (library.data?.length ?? 0) > 0
-  const more = MORE.filter((m) => m.to !== paths.library || hasArticles)
+  const more = [
+    ...(isLeader ? [{ name: 'Leaders', to: paths.leaders, icon: Crown }] : []),
+    ...MORE.filter((m) => m.to !== paths.library || hasArticles),
+  ]
   const inMore = more.some((m) => location.pathname.startsWith(m.to))
 
   return (
@@ -102,7 +108,15 @@ export function TabBar() {
             aria-label="More sections"
             onClick={hapticTap}
           >
-            <Menu className="size-5" strokeWidth={inMore ? 2.5 : 1.75} aria-hidden="true" />
+            <span className="relative">
+              <Menu className="size-5" strokeWidth={inMore ? 2.5 : 1.75} aria-hidden="true" />
+              {requests > 0 && (
+                <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-leader px-1 text-center text-[10px] font-semibold leading-4 text-leader-foreground">
+                  {requests}
+                  <span className="sr-only"> join requests</span>
+                </span>
+              )}
+            </span>
             <span>More</span>
           </SheetTrigger>
           <SheetContent>
@@ -121,8 +135,16 @@ export function TabBar() {
                       )
                     }
                   >
-                    <Icon className="size-5 text-primary" aria-hidden="true" />
-                    {name}
+                    <Icon
+                      className={cn('size-5', to === paths.leaders ? 'text-leader' : 'text-primary')}
+                      aria-hidden="true"
+                    />
+                    <span className="flex-1">{name}</span>
+                    {to === paths.leaders && requests > 0 && (
+                      <span className="rounded-full bg-leader px-2 text-xs font-semibold leading-5 text-leader-foreground">
+                        {requests} waiting
+                      </span>
+                    )}
                   </NavLink>
                 </li>
               ))}

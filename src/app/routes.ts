@@ -13,6 +13,7 @@ export const paths = {
   identity: '/identity',
   accountability: '/accountability',
   settings: '/settings',
+  leaders: '/leaders',
   privacy: '/privacy',
 } as const
 

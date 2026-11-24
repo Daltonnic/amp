@@ -51,6 +51,9 @@ function deviceTable<K extends TableName>(name: K): TableApi<Tables[K]> {
               last_name: '',
               name_display: 'first_last_initial',
               nickname: '',
+              freedom_start: null,
+              freedom_best_days: 0,
+              freedom_hidden: false,
               ...(r as object),
             }) as Row,
         )

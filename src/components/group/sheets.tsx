@@ -20,7 +20,7 @@ import {
 import type { GroupMember, GroupMessage, GroupReport, GroupRoomId } from '@/data/types'
 import { hapticSuccess } from '@/lib/native'
 import { cn, errorMessage } from '@/lib/utils'
-import { Avatar } from './Avatar'
+import { Avatar, LeaderBadge } from './Avatar'
 
 const REPORT_REASONS = [
   'Explicit or sexual content',
@@ -365,6 +365,7 @@ export function MembersSheet({
   members,
   me,
   isModerator,
+  leaders,
   blocked,
 }: {
   room: GroupRoomId
@@ -373,6 +374,7 @@ export function MembersSheet({
   members: GroupMember[]
   me: string
   isModerator: boolean
+  leaders: Set<string>
   blocked: Set<string>
 }) {
   const info = GROUP_ROOMS[room]
@@ -386,6 +388,7 @@ export function MembersSheet({
     .sort(
       (a, b) =>
         Number(b.user_id === me) - Number(a.user_id === me) ||
+        Number(leaders.has(b.user_id)) - Number(leaders.has(a.user_id)) ||
         Number(b.role === 'moderator') - Number(a.role === 'moderator') ||
         a.display_name.localeCompare(b.display_name),
     )
@@ -434,12 +437,18 @@ export function MembersSheet({
               const isBlocked = blocked.has(m.user_id)
               return (
                 <li key={m.user_id} className="flex items-center gap-3 py-2.5">
-                  <Avatar userId={m.user_id} name={m.display_name} className="size-10 text-sm" />
+                  <Avatar
+                    userId={m.user_id}
+                    name={m.display_name}
+                    leader={leaders.has(m.user_id)}
+                    className="size-10 text-sm"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-1.5 font-medium text-foreground">
                       <span className="truncate">{m.display_name}</span>
                       {isMe && <Badge variant="secondary">You</Badge>}
-                      {m.role === 'moderator' && <Badge>Moderator</Badge>}
+                      {leaders.has(m.user_id) && <LeaderBadge />}
+                      {m.role === 'moderator' && !leaders.has(m.user_id) && <Badge>Moderator</Badge>}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Joined {format(new Date(m.joined_at), 'MMM yyyy')}
@@ -459,7 +468,7 @@ export function MembersSheet({
                       >
                         {isBlocked ? 'Unblock' : 'Block'}
                       </Button>
-                      {isModerator && m.role !== 'moderator' && (
+                      {isModerator && m.role !== 'moderator' && !leaders.has(m.user_id) && (
                         <Button
                           size="sm"
                           variant="ghost"

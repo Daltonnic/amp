@@ -579,11 +579,84 @@ test('notifications: one-tap button on Home, toggles in Settings', async ({ page
   // Off again: Home offers it again, and "Not now" hides it on this device.
   await page.goto('/home')
   await expect(card).toBeVisible()
-  await page.getByRole('button', { name: 'Not now' }).click()
+  await page.getByRole('region', { name: 'Notifications' }).getByRole('button', { name: 'Not now' }).click()
   await expect(card).toBeHidden()
   await page.reload()
   await expect(page.getByRole('heading', { name: 'The Journey' })).toBeVisible()
   await expect(card).toBeHidden()
+
+  expect(errors).toEqual([])
+})
+
+test('freedom counter: start, milestones, and starting again with grace', async ({ page }) => {
+  const errors = watchErrors(page)
+  await onboard(page, 'men', 'man')
+
+  const card = page.getByText('Freedom counter')
+  await expect(card).toBeVisible()
+  await page.getByRole('button', { name: 'Start today' }).click()
+  await expect(page.getByText('Day 1', { exact: true })).toBeVisible()
+  await expect(page.getByText(/1 day to 1 day/)).toBeVisible()
+
+  // Started 30 days ago: a milestone to celebrate.
+  await page.getByRole('button', { name: 'Edit start date' }).click()
+  const thirtyDaysAgo = await page.evaluate(() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 30)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })
+  await page.getByLabel('My current stretch of freedom began on').fill(thirtyDaysAgo)
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByText('30 days of freedom!')).toBeVisible()
+  await expect(page.getByText(/30 days to 60 days/)).toBeVisible()
+
+  // Starting again: grace, not shame, and the longest stretch is kept.
+  await page.getByRole('button', { name: 'Start again' }).click()
+  const grace = page.getByRole('dialog', { name: 'Grace for today' })
+  await expect(grace.getByText(/new every morning/)).toBeVisible()
+  await expect(grace.getByText(/Your 30 days still count/)).toBeVisible()
+  await grace.getByRole('button', { name: 'Start again today' }).click()
+  await expect(page.getByText('Day 1', { exact: true })).toBeVisible()
+  await expect(page.getByText(/Longest: 30 days/)).toBeVisible()
+
+  // It can be hidden in Settings.
+  await page.goto('/settings')
+  await page.getByRole('switch', { name: 'Show freedom counter' }).click()
+  await page.getByRole('button', { name: 'Save Settings' }).click()
+  await page.goto('/home')
+  await expect(page.getByRole('heading', { name: 'The Journey' })).toBeVisible()
+  await expect(page.getByText(/of freedom|Day 1/)).toHaveCount(0)
+
+  expect(errors).toEqual([])
+})
+
+test('leaders: page for leaders, and everyone else asks to join', async ({ page }) => {
+  const errors = watchErrors(page)
+  await onboard(page, 'men', 'man')
+
+  // On this device you're the leader: the Leaders page is in More, in gold.
+  await page.getByRole('button', { name: 'More sections' }).click()
+  await page.getByRole('link', { name: 'Leaders' }).click()
+  await expect(page.getByRole('heading', { name: 'Leaders', level: 1 })).toBeVisible()
+  await page.getByRole('tab', { name: 'Requests' }).click()
+  await expect(page.getByText('No one is waiting')).toBeVisible()
+  await page.getByRole('tab', { name: 'People' }).click()
+  await expect(page.getByRole('list', { name: 'People' }).getByText('Leader')).toBeVisible()
+  await page.getByRole('tab', { name: 'Leaders' }).click()
+  await expect(page.getByText('There must always be at least one leader.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Step down' })).toHaveCount(0)
+
+  // Someone who isn't a leader: no Leaders page, and joining waits for approval.
+  await page.evaluate(() => localStorage.setItem('amp.device.leaders', '[]'))
+  await page.goto('/leaders')
+  await expect(page.getByText('Leaders only')).toBeVisible()
+  await page.goto('/group')
+  await page.getByLabel('First name', { exact: true }).fill('Ben')
+  await page.getByRole('checkbox', { name: 'I agree to follow these guidelines' }).check()
+  await page.getByRole('button', { name: 'Ask to join' }).click()
+  await expect(page.getByRole('heading', { name: 'Your request has been sent' })).toBeVisible()
+  await page.getByRole('button', { name: 'More sections' }).click()
+  await expect(page.getByRole('link', { name: 'Leaders' })).toHaveCount(0)
 
   expect(errors).toEqual([])
 })

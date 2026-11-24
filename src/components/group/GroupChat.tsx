@@ -23,6 +23,7 @@ import {
   useGroupMessage,
   useGroupMessages,
   useGroupReports,
+  useLeaders,
   useMarkRead,
   useSendMessage,
   useToggleLike,
@@ -33,7 +34,7 @@ import { useKeyboardOpen } from '@/lib/keyboard'
 import { hapticTap } from '@/lib/native'
 import { clearGroupNotifications } from '@/lib/push'
 import { cn, errorMessage } from '@/lib/utils'
-import { Avatar } from './Avatar'
+import { Avatar, LeaderBadge } from './Avatar'
 import { MembersSheet, MessageActionsSheet, ReportsSheet } from './sheets'
 
 const MAX_LENGTH = 2000
@@ -47,7 +48,10 @@ const scrollToBottom = (smooth: boolean) =>
 export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMember }) {
   const me = member.user_id
   const info = GROUP_ROOMS[room]
-  const isModerator = member.role === 'moderator'
+  const leadersQ = useLeaders()
+  const leaders = useMemo(() => leadersQ.data ?? new Set<string>(), [leadersQ.data])
+  // Leaders moderate the group they're in.
+  const isModerator = member.role === 'moderator' || leaders.has(me)
   const keyboardOpen = useKeyboardOpen()
 
   const messagesQ = useGroupMessages(room, true)
@@ -298,6 +302,7 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
               me={me}
               authorName={nameOf(m.user_id)}
               authorIsModerator={author?.role === 'moderator'}
+              authorIsLeader={leaders.has(m.user_id)}
               reply={m.reply_to ? (byId.get(m.reply_to) ?? null) : null}
               nameOf={nameOf}
               blocked={blocked}
@@ -348,6 +353,7 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
         members={membersQ.data ?? []}
         me={me}
         isModerator={isModerator}
+        leaders={leaders}
         blocked={blocked}
       />
       {isModerator && (
@@ -364,6 +370,7 @@ const MessageRow = memo(function MessageRow({
   me,
   authorName,
   authorIsModerator,
+  authorIsLeader,
   reply,
   nameOf,
   blocked,
@@ -376,6 +383,7 @@ const MessageRow = memo(function MessageRow({
   me: string
   authorName: string
   authorIsModerator: boolean
+  authorIsLeader: boolean
   reply: GroupMessage | null
   nameOf: (userId: string) => string
   blocked: Set<string>
@@ -393,7 +401,7 @@ const MessageRow = memo(function MessageRow({
       ? 'Hidden after reports'
       : m.deleted_by === m.user_id
         ? 'This message was deleted'
-        : 'Removed by a moderator'
+        : 'Removed by a leader'
 
   return (
     <div
@@ -402,15 +410,21 @@ const MessageRow = memo(function MessageRow({
     >
       {!mine &&
         (first ? (
-          <Avatar userId={m.user_id} name={authorName} className="mt-5" />
+          <Avatar userId={m.user_id} name={authorName} leader={authorIsLeader} className="mt-5" />
         ) : (
           <span className="w-8 shrink-0" />
         ))}
       <div className={cn('flex min-w-0 max-w-[80%] flex-col', mine ? 'items-end' : 'items-start')}>
         {!mine && first && (
-          <p className="mb-0.5 flex items-center gap-1.5 px-1 text-xs font-medium text-muted-foreground">
+          <p
+            className={cn(
+              'mb-0.5 flex items-center gap-1.5 px-1 text-xs font-medium',
+              authorIsLeader ? 'text-leader' : 'text-muted-foreground',
+            )}
+          >
             {authorName}
-            {authorIsModerator && (
+            {authorIsLeader && <LeaderBadge />}
+            {authorIsModerator && !authorIsLeader && (
               <span className="rounded bg-primary/10 px-1 py-px text-[10px] font-semibold text-primary">
                 Moderator
               </span>
@@ -429,7 +443,9 @@ const MessageRow = memo(function MessageRow({
                 ? 'border border-dashed text-muted-foreground italic'
                 : mine
                   ? 'bg-primary text-primary-foreground'
-                  : 'border bg-card text-card-foreground',
+                  : authorIsLeader
+                    ? 'border border-leader/50 bg-leader-soft text-foreground'
+                    : 'border bg-card text-card-foreground',
               mine && last && !deleted && 'rounded-br-md',
               !mine && last && !deleted && 'rounded-bl-md',
               pending && 'opacity-60',
