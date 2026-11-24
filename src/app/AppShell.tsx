@@ -7,6 +7,7 @@ import { NameRequired } from '@/components/NameRequired'
 import { PageBackground } from '@/components/PageBackground'
 import { TabBar } from '@/components/TabBar'
 import { useGroupLive, useGroupStatus, useMyRoom } from '@/data/groupQueries'
+import { useNotificationsLive } from '@/data/notificationQueries'
 import { useProfile } from '@/data/queries'
 import { useAuth } from '@/lib/auth'
 import { useKeyboardOpen } from '@/lib/keyboard'
@@ -100,6 +101,7 @@ export function TabsLayout() {
       </main>
       {!keyboardOpen && <TabBar />}
       <GroupLive />
+      <NotificationsLive />
     </div>
   )
 }
@@ -121,6 +123,12 @@ function GroupLive() {
   const room = useMyRoom()
   const status = useGroupStatus(room)
   useGroupLive(room, Boolean(status.data?.member))
+  return null
+}
+
+/** Keeps notifications (and the bell's count) current while the app is open. */
+function NotificationsLive() {
+  useNotificationsLive()
   return null
 }
 

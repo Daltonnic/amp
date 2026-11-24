@@ -302,3 +302,24 @@ export interface RsvpPerson {
   shown_name: string
   response: RsvpResponse
 }
+
+/** What a notification is about (see supabase/migrations/*_notifications.sql). */
+export type NotificationKind =
+  'reply' | 'join_request' | 'join_handled' | 'join_approved' | 'join_declined' | 'leader' | 'meeting'
+
+/** One item on the Notifications screen. */
+export interface AppNotification {
+  id: string
+  user_id: string
+  kind: NotificationKind
+  title: string
+  body: string
+  /** A path inside the app. */
+  url: string
+  message_id: string | null
+  event_id: string | null
+  occurrence_start: string | null
+  subject_user: string | null
+  created_at: string
+  read_at: string | null
+}

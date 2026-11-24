@@ -225,7 +225,7 @@ async function calendarReminder(db: SupabaseClient, eventId: string, startsAt: s
   const recipients = await db.rpc('calendar_push_recipients', { event_id: eventId, occurrence_start: startsAt })
   if (recipients.error) throw new Error(`calendar_push_recipients failed: ${recipients.error.message}`)
   return deliver(db, (recipients.data ?? []) as Recipient[], (r) =>
-    eventReminderNotification({ eventId, title: event.title, minutes, preview: r.show_preview }),
+    eventReminderNotification({ eventId, title: event.title, minutes, preview: r.show_preview, startsAt }),
   )
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ExternalLink,
@@ -72,6 +72,12 @@ import { errorMessage } from '@/lib/utils'
 
 export default function Settings() {
   const profile = useProfile()
+  const { hash } = useLocation()
+  const ready = Boolean(profile.data)
+  // Links like /settings#notifications open at that section.
+  useEffect(() => {
+    if (ready && hash) document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })
+  }, [ready, hash])
   if (!profile.data) return null
   // Re-key on save so the form re-initialises from the stored profile.
   return <SettingsForm key={profile.data.updated_at} profile={profile.data} />
@@ -182,7 +188,7 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
         </Section>
       )}
 
-      <Section title="Notifications">
+      <Section title="Notifications" id="notifications">
         <PushSettings />
         <Row title="Daily Reminders" subtitle="Gentle nudges to check in">
           <Switch checked={reminders} onCheckedChange={setReminders} aria-label="Daily reminders" />
@@ -440,9 +446,19 @@ function GroupSection({ room }: { room: NonNullable<ReturnType<typeof useMyRoom>
   )
 }
 
-function Section({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
+function Section({
+  title,
+  icon,
+  id,
+  children,
+}: {
+  title: string
+  icon?: ReactNode
+  id?: string
+  children: ReactNode
+}) {
   return (
-    <Card className="space-y-4 p-5">
+    <Card id={id} className="scroll-mt-6 space-y-4 p-5">
       <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
         {icon}
         {title}

@@ -19,6 +19,7 @@ import { AboutYouPrompt } from '@/components/AboutYouPrompt'
 import { FreedomBadge, FreedomCard } from '@/components/FreedomCard'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { NextMeeting } from '@/components/NextMeeting'
+import { NotificationBell } from '@/components/NotificationBell'
 import { NotificationsPrompt } from '@/components/NotificationsPrompt'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { WeeklyChart, type ChartSeries } from '@/components/WeeklyChart'
@@ -63,15 +64,18 @@ export default function Home() {
       onRefresh={() => Promise.all([profile.refetch(), today.refetch(), week.refetch(), contacts.refetch()])}
     >
       <div className="mx-auto max-w-lg space-y-6 px-5 pb-4 pt-8">
-        <header className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm text-muted-foreground">
+        <header>
+          <div className="flex min-h-8 items-center justify-between gap-3">
+            <p className="min-w-0 text-sm text-muted-foreground">
               {greeting()}
               {name ? `, ${name}` : ''}
             </p>
-            <h1 className="mt-0.5 font-display text-2xl font-semibold text-foreground">The Journey</h1>
+            <div className="flex shrink-0 items-center gap-2">
+              <FreedomBadge profile={profile.data} />
+              <NotificationBell />
+            </div>
           </div>
-          <FreedomBadge profile={profile.data} />
+          <h1 className="mt-0.5 font-display text-2xl font-semibold text-foreground">The Journey</h1>
         </header>
         {!profile.data.gender && <AboutYouPrompt profileId={profile.data.id} />}
         <NotificationsPrompt />

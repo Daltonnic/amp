@@ -25,6 +25,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { AboutYouPrompt } from '@/components/AboutYouPrompt'
 import { Screen } from '@/components/layout'
@@ -45,12 +46,14 @@ import {
   useSaveEvent,
 } from '@/data/calendarQueries'
 import { useIsLeader, useLeaders, useMyRoom } from '@/data/groupQueries'
+import { useReadOnVisit } from '@/data/notificationQueries'
 import { useProfile } from '@/data/queries'
 import type {
   CalendarEvent,
   CalendarEventInput,
   CalendarOccurrence,
   GroupRoomId,
+  NotificationKind,
   Repeat,
   RsvpResponse,
   RsvpSummary,
@@ -73,16 +76,23 @@ import { cn, errorMessage } from '@/lib/utils'
 
 const ROOM_IDS = Object.keys(GROUP_ROOMS) as GroupRoomId[]
 
+const MEETING_KINDS: NotificationKind[] = ['meeting']
+
 /** Each group's meetings. Leaders see and manage every group's events. */
 export default function Calendar() {
   const profile = useProfile()
   const room = useMyRoom()
   const leaders = useLeaders()
   const isLeader = useIsLeader()
-  const [month, setMonth] = useState(() => startOfMonth(new Date()))
-  const [selected, setSelected] = useState(() => new Date())
+  // A meeting reminder links here as ?event=<id>&at=<start in ms> to open that meeting.
+  const [params, setParams] = useSearchParams()
+  const linkAt = Number(params.get('at'))
+  const linkKey = params.get('event') && linkAt > 0 ? `${params.get('event')}|${linkAt}` : null
+  const [month, setMonth] = useState(() => startOfMonth(linkAt > 0 ? new Date(linkAt) : new Date()))
+  const [selected, setSelected] = useState(() => (linkAt > 0 ? new Date(linkAt) : new Date()))
   const [filter, setFilter] = useState<GroupRoomId | 'all'>('all')
   const [openId, setOpenId] = useState<CalendarOccurrence | null>(null)
+  useReadOnVisit(MEETING_KINDS)
   const [editing, setEditing] = useState<CalendarEvent | 'new' | null>(null)
 
   // One fetch covers the visible month grid and the next 60 days.
@@ -100,6 +110,13 @@ export default function Calendar() {
     () => (occurrences.data ?? []).filter((o) => filter === 'all' || o.rooms.includes(filter)),
     [occurrences.data, filter],
   )
+  const linked = linkKey
+    ? ((occurrences.data ?? []).find((o) => occurrenceKey(o.event_id, o.starts_at) === linkKey) ?? null)
+    : null
+  const shown = openId ?? linked
+  const closeLink = () => {
+    if (linkKey) setParams({}, { replace: true })
+  }
   const onDay = (day: Date) => visible.filter((o) => isSameDay(new Date(o.starts_at), day))
   const upcoming = visible.filter((o) => new Date(o.ends_at) > new Date()).slice(0, 6)
 
@@ -291,12 +308,16 @@ export default function Calendar() {
       </section>
 
       <EventSheet
-        occurrence={openId}
-        rsvp={openId ? rsvpFor(openId) : undefined}
+        occurrence={shown}
+        rsvp={shown ? rsvpFor(shown) : undefined}
         isLeader={isLeader}
-        onClose={() => setOpenId(null)}
+        onClose={() => {
+          setOpenId(null)
+          closeLink()
+        }}
         onEdit={(event) => {
           setOpenId(null)
+          closeLink()
           setEditing(event)
         }}
       />

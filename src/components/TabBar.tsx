@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router'
 import {
+  Bell,
   BookMarked,
   BookOpen,
   CalendarDays,
@@ -21,6 +22,7 @@ import { paths } from '@/app/routes'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/dialog'
 import { DialogDescription, DialogTitle } from '@radix-ui/react-dialog'
 import { useGroupBadge, useIsLeader, useJoinRequestCount } from '@/data/groupQueries'
+import { useUnreadNotificationCount } from '@/data/notificationQueries'
 import { useLibrary } from '@/data/queries'
 import { hapticTap } from '@/lib/native'
 import { cn } from '@/lib/utils'
@@ -34,6 +36,7 @@ const TABS: { name: string; to: string; icon: LucideIcon }[] = [
 ]
 
 const MORE: { name: string; to: string; icon: LucideIcon }[] = [
+  { name: 'Notifications', to: paths.notifications, icon: Bell },
   { name: 'Calendar', to: paths.calendar, icon: CalendarDays },
   { name: 'Resources', to: paths.resources, icon: Library },
   { name: 'Library', to: paths.library, icon: BookMarked },
@@ -54,6 +57,7 @@ export function TabBar() {
   const unread = useGroupBadge()
   const isLeader = useIsLeader()
   const requests = useJoinRequestCount()
+  const newNotifications = useUnreadNotificationCount()
   // The Library is admin-published content. Until at least one article is
   // published it stays out of the menu rather than showing an empty section
   // (App Review rejects placeholder content).
@@ -142,6 +146,11 @@ export function TabBar() {
                       aria-hidden="true"
                     />
                     <span className="flex-1">{name}</span>
+                    {to === paths.notifications && newNotifications > 0 && (
+                      <span className="rounded-full bg-destructive px-2 text-xs font-semibold leading-5 text-destructive-foreground">
+                        {newNotifications > 99 ? '99+' : newNotifications} new
+                      </span>
+                    )}
                     {to === paths.leaders && requests > 0 && (
                       <span className="rounded-full bg-leader px-2 text-xs font-semibold leading-5 text-leader-foreground">
                         {requests} waiting

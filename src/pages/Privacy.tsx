@@ -11,7 +11,7 @@ import { paths } from '@/app/routes'
  * which is this page: https://<your-domain>/privacy
  */
 
-const UPDATED = 'November 26, 2026'
+const UPDATED = 'November 24, 2026'
 
 function H({ children }: { children: ReactNode }) {
   return <h2 className="mb-2 mt-6 font-display text-lg font-semibold text-foreground">{children}</h2>
@@ -123,6 +123,12 @@ export default function Privacy() {
             message or meeting name only if you turn on "Show details". The content is encrypted on its way to
             your device. Turn notifications off in Settings at any time; signing out or deleting your account
             removes your device address.
+          </p>
+          <p>
+            The Notifications screen in the app (the bell on Home) lists replies to you, news about joining
+            your group, becoming a leader, and meeting reminders, whether or not push notifications are on.
+            Only you can see your list. You can remove items from it at any time, and they're deleted
+            automatically after 90 days or when the message or meeting they're about is deleted.
           </p>
 
           <H>When information leaves the app</H>

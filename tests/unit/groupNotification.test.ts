@@ -96,5 +96,15 @@ describe('meeting reminders', () => {
     expect(eventReminderNotification({ eventId: 'e1', title: 'X', minutes: 0, preview: true }).body).toBe(
       'Starting now',
     )
+    // Tapping opens that date of the meeting.
+    expect(
+      eventReminderNotification({
+        eventId: 'e1',
+        title: 'X',
+        minutes: 60,
+        preview: false,
+        startsAt: '2026-12-02T01:00:00+00:00',
+      }).url,
+    ).toBe(`/calendar?event=e1&at=${Date.UTC(2026, 11, 2, 1)}`)
   })
 })

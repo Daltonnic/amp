@@ -102,20 +102,24 @@ export function eventReminderNotification(n: {
   title: string
   minutes: number
   preview: boolean
+  /** When this date of the meeting starts; tapping opens that meeting. */
+  startsAt?: string | null
 }): GroupNotification {
   const when = startsIn(n.minutes)
+  const at = n.startsAt ? new Date(n.startsAt).getTime() : NaN
+  const url = Number.isFinite(at) ? `/calendar?event=${encodeURIComponent(n.eventId)}&at=${at}` : '/calendar'
   return n.preview
     ? {
         title: n.title,
         body: when === 'is starting now' ? 'Starting now' : `${when[0]!.toUpperCase()}${when.slice(1)}`,
-        url: '/calendar',
+        url,
         tag: `amp-event-${n.eventId}`,
         discreet: false,
       }
     : {
         title: 'AMP',
         body: `A meeting ${when}`,
-        url: '/calendar',
+        url,
         tag: `amp-event-${n.eventId}`,
         discreet: true,
       }

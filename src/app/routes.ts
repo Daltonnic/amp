@@ -15,6 +15,7 @@ export const paths = {
   accountability: '/accountability',
   settings: '/settings',
   leaders: '/leaders',
+  notifications: '/notifications',
   privacy: '/privacy',
 } as const
 

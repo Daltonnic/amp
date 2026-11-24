@@ -17,7 +17,8 @@ import {
   useReviewRequest,
   useSetLeader,
 } from '@/data/groupQueries'
-import type { LeaderPerson } from '@/data/types'
+import { useReadOnVisit } from '@/data/notificationQueries'
+import type { LeaderPerson, NotificationKind } from '@/data/types'
 import { hapticSuccess } from '@/lib/native'
 import { cn, errorMessage } from '@/lib/utils'
 
@@ -38,12 +39,15 @@ const groupOf = (p: LeaderPerson) =>
 
 type Tab = 'requests' | 'people' | 'leaders'
 
+const LEADER_KINDS: NotificationKind[] = ['join_request', 'join_handled', 'leader']
+
 /** For leaders: approve new members, see everyone, and choose other leaders. */
 export default function Leaders() {
   const isLeader = useIsLeader()
   const leaders = useLeaders()
   const people = useLeaderPeople(isLeader)
   const [tab, setTab] = useState<Tab | null>(null)
+  useReadOnVisit(LEADER_KINDS, isLeader)
 
   if (leaders.isPending) {
     return (

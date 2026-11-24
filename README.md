@@ -30,6 +30,7 @@ Every screen from the Base44 app, with its original wording, Scripture, prayers 
 | Identity & Scripture | `/identity`       | Truths and Scripture meditation                                                                                                     |
 | Accountability       | `/accountability` | Trusted contacts; request a check-in, text, call                                                                                    |
 | Calendar             | `/calendar`       | Each group's meetings; leaders add events with repeats and reminder notifications ([docs/CALENDAR.md](docs/CALENDAR.md))            |
+| Notifications        | `/notifications`  | The bell on Home: replies, join requests and approvals, new leaders, meeting reminders ([docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md)) |
 | Leaders              | `/leaders`        | Leaders only: approve join requests for every group, see everyone, make or step down leaders                                        |
 | Settings             | `/settings`       | Name and how it shows, man/woman, group, reminders, appearance, PIN/Face ID lock, sign out, delete account                          |
 | Privacy Policy       | `/privacy`        | Public page (required by both stores)                                                                                               |
@@ -105,7 +106,7 @@ To connect a backend, copy `.env.example` to `.env.local` and follow [docs/SUPAB
 
 ## Guides
 
-- [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md) — create the backend (database, auth, email, AI)
+- [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md) — create the backend (database, auth, email, push)
 - [docs/MIGRATION_FROM_BASE44.md](docs/MIGRATION_FROM_BASE44.md) — only if the Base44 app has real users or articles to bring over (a fresh launch can skip it)
 - [docs/DEPLOY_PWA.md](docs/DEPLOY_PWA.md) — put the installable web app online
 - [docs/APP_STORE_RELEASE.md](docs/APP_STORE_RELEASE.md) — ship to the App Store and Google Play

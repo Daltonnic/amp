@@ -260,7 +260,7 @@ export function FreedomBadge({ profile }: { profile: Profile }) {
           : `${days} days of freedom. Show freedom counter`
       }
       // A slim pill; the invisible ::after keeps a comfortable tap area.
-      className="relative mt-1 inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-primary/20 bg-card/90 py-1 pl-2 pr-2.5 text-xs shadow-xs transition-colors after:absolute after:-inset-2 after:content-[''] hover:bg-primary/5 active:scale-[0.98]"
+      className="relative inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-primary/20 bg-card/90 py-1 pl-2 pr-2.5 text-xs shadow-xs transition-colors after:absolute after:-inset-2 after:content-[''] hover:bg-primary/5 active:scale-[0.98]"
     >
       <Flame className="size-3.5 text-primary" aria-hidden="true" />
       <span className="font-semibold text-foreground">{days === 0 ? 'Day 1' : days}</span>

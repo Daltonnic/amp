@@ -24,6 +24,7 @@ const IdentityFormation = lazy(() => import('@/pages/IdentityFormation'))
 const Accountability = lazy(() => import('@/pages/Accountability'))
 const Settings = lazy(() => import('@/pages/Settings'))
 const Leaders = lazy(() => import('@/pages/Leaders'))
+const Notifications = lazy(() => import('@/pages/Notifications'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
@@ -57,6 +58,7 @@ const router = createBrowserRouter([
           { path: paths.accountability, element: <Accountability /> },
           { path: paths.settings, element: <Settings /> },
           { path: paths.leaders, element: <Leaders /> },
+          { path: paths.notifications, element: <Notifications /> },
         ],
       },
       ...Object.entries(legacyRedirects).map(([from, to]) => ({

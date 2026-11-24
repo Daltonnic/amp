@@ -17,3 +17,4 @@ for f in "$here"/../migrations/*.sql; do "${psql[@]}" -f "$f"; done
 "${psql[@]}" -f "$here/rls.sql"
 "${psql[@]}" -f "$here/chat.sql"
 "${psql[@]}" -f "$here/calendar.sql"
+"${psql[@]}" -f "$here/notifications.sql"

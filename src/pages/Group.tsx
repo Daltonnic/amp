@@ -12,12 +12,18 @@ import { GROUP_ROOMS } from '@/content/group'
 import { useGroupStatus, useJoinGroup, useMyRoom } from '@/data/groupQueries'
 import { errorMessage } from '@/lib/utils'
 import { useProfile } from '@/data/queries'
+import { useReadOnVisit } from '@/data/notificationQueries'
+import type { NotificationKind } from '@/data/types'
 
 /** The Group tab: a GroupMe-style chat for the person's own group. */
+const GROUP_KINDS: NotificationKind[] = ['reply', 'join_approved', 'join_declined']
+
 export default function Group() {
   const profile = useProfile()
   const room = useMyRoom()
   const status = useGroupStatus(room)
+  // Being here is seeing replies and news about joining.
+  useReadOnVisit(GROUP_KINDS)
 
   if (profile.isPending || (room && status.isPending)) {
     return (

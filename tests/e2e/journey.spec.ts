@@ -763,9 +763,9 @@ test('calendar: leaders add meetings with reminders; each group sees its own', a
   const upcoming = page
     .getByRole('region', { name: 'Coming up' })
     .or(page.locator('section', { has: page.getByRole('heading', { name: 'Coming up' }) }))
-  await expect(upcoming.getByRole('button', { name: /Tuesday Night Group/ }).first()).toBeVisible()
+  await expect(upcoming.getByRole('button', { name: /^(New: )?Tuesday Night Group/ }).first()).toBeVisible()
   await upcoming
-    .getByRole('button', { name: /Tuesday Night Group/ })
+    .getByRole('button', { name: /^(New: )?Tuesday Night Group/ })
     .first()
     .click()
   const details = page.getByRole('dialog', { name: 'Tuesday Night Group' })
@@ -801,20 +801,186 @@ test('calendar: leaders add meetings with reminders; each group sees its own', a
   await page.evaluate(() => localStorage.setItem('amp.device.leaders', '[]'))
   await page.goto('/calendar')
   await expect(page.getByText('Meetings for Men in Recovery')).toBeVisible()
-  await expect(page.getByRole('button', { name: /Tuesday Night Group/ }).first()).toBeVisible()
+  await expect(page.getByRole('button', { name: /^(New: )?Tuesday Night Group/ }).first()).toBeVisible()
   await expect(page.getByRole('button', { name: 'Add event' })).toHaveCount(0)
 
   // A leader can delete it.
   await page.evaluate(() => localStorage.removeItem('amp.device.leaders'))
   await page.goto('/calendar')
   await page
-    .getByRole('button', { name: /Tuesday Night Group/ })
+    .getByRole('button', { name: /^(New: )?Tuesday Night Group/ })
     .first()
     .click()
   await page.getByRole('button', { name: 'Delete' }).click()
   await page.getByRole('button', { name: 'Delete' }).last().click()
   await expect(page.getByText('No meetings yet.')).toBeVisible()
 
+  expect(errors).toEqual([])
+})
+
+test('notifications: bell on Home, the list, opening, removing and reading', async ({ page }) => {
+  const errors = watchErrors(page)
+  await onboard(page, 'men', 'man')
+
+  // Seed what the server would have written: a reply, a meeting reminder for
+  // tomorrow at 7 PM, and an older "you're in" that was already read.
+  const at = await page.evaluate(() => {
+    const d = new Date()
+    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 19, 0, 0)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const local = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}T19:00:00`
+    const now = Date.now()
+    const iso = (msAgo: number) => new Date(now - msAgo).toISOString()
+    localStorage.setItem(
+      'amp.device.calendar_events',
+      JSON.stringify([
+        {
+          id: 'ev1',
+          rooms: ['men-recovery'],
+          title: 'Tuesday Night Group',
+          description: '',
+          location: '',
+          starts_local: local,
+          timezone: 'America/Chicago',
+          duration_minutes: 60,
+          repeat: 'none',
+          repeat_until: null,
+          reminders: [60],
+          created_by: null,
+          created_at: iso(0),
+          updated_at: iso(0),
+        },
+      ]),
+    )
+    const base = {
+      user_id: 'me',
+      message_id: null,
+      event_id: null,
+      occurrence_start: null,
+      subject_user: null,
+    }
+    localStorage.setItem(
+      'amp.device.notifications',
+      JSON.stringify([
+        {
+          ...base,
+          id: 'n1',
+          kind: 'reply',
+          title: 'Mark T. replied to you',
+          body: 'Praying for you today.',
+          url: '/group',
+          created_at: iso(5 * 60_000),
+          read_at: null,
+        },
+        {
+          ...base,
+          id: 'n2',
+          kind: 'meeting',
+          title: 'Tuesday Night Group',
+          body: '',
+          url: `/calendar?event=ev1&at=${start.getTime()}`,
+          event_id: 'ev1',
+          occurrence_start: start.toISOString(),
+          created_at: iso(60_000),
+          read_at: null,
+        },
+        {
+          ...base,
+          id: 'n3',
+          kind: 'join_approved',
+          title: "You're in! Welcome to Men in Recovery",
+          body: 'Your request was approved. Say hello to the group.',
+          url: '/group',
+          created_at: iso(2 * 86_400_000),
+          read_at: iso(86_400_000),
+        },
+      ]),
+    )
+    return start.getTime()
+  })
+  await page.reload()
+
+  // The bell shows how many are new; so does More.
+  const bell = page.getByRole('link', { name: 'Notifications, 2 new' })
+  await expect(bell).toBeVisible()
+  await page.getByRole('button', { name: 'More sections' }).click()
+  await expect(page.getByRole('link', { name: /Notifications\s*2 new/ })).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await bell.click()
+  await expect(page).toHaveURL(/\/notifications$/)
+  await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible()
+  const fresh = page.locator('section', { has: page.getByText('New', { exact: true }) })
+  const earlier = page.locator('section', { has: page.getByText('Earlier', { exact: true }) })
+  await expect(fresh.getByRole('button', { name: /^(New: )?Mark T\. replied to you/ })).toBeVisible()
+  await expect(fresh.getByText('Praying for you today.')).toBeVisible()
+  await expect(fresh.getByRole('button', { name: /^(New: )?Tuesday Night Group/ })).toContainText(
+    'Starts tomorrow at 7:00 PM',
+  )
+  await expect(earlier.getByRole('button', { name: /^You're in! Welcome to Men in Recovery/ })).toBeVisible()
+
+  // Remove one.
+  await page.getByRole('button', { name: "Remove “You're in! Welcome to Men in Recovery”" }).click()
+  await expect(page.getByText('Welcome to Men in Recovery')).toHaveCount(0)
+
+  // Tapping a meeting reminder opens that meeting.
+  await fresh.getByRole('button', { name: /^(New: )?Tuesday Night Group/ }).click()
+  await expect(page).toHaveURL(new RegExp(`/calendar\\?event=ev1&at=${at}$`))
+  const sheet = page.getByRole('dialog')
+  await expect(sheet.getByText('Tuesday Night Group')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page).toHaveURL(/\/calendar$/)
+
+  // Leaving the list counted everything on it as read.
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Home' }).click()
+  await expect(page.getByRole('link', { name: 'Notifications', exact: true })).toBeVisible()
+
+  // A new reply: visiting the group counts as reading it.
+  await page.evaluate(() => {
+    const rows = JSON.parse(localStorage.getItem('amp.device.notifications') ?? '[]')
+    rows.push({
+      id: 'n4',
+      user_id: 'me',
+      kind: 'reply',
+      title: 'Mark T. replied to you',
+      body: 'Me too.',
+      url: '/group',
+      message_id: null,
+      event_id: null,
+      occurrence_start: null,
+      subject_user: null,
+      created_at: new Date().toISOString(),
+      read_at: null,
+    })
+    localStorage.setItem('amp.device.notifications', JSON.stringify(rows))
+  })
+  await page.reload()
+  await expect(page.getByRole('link', { name: 'Notifications, 1 new' })).toBeVisible()
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Group' }).click()
+  await expect(page.getByRole('heading', { name: 'Men in Recovery' })).toBeVisible()
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Home' }).click()
+  await expect(page.getByRole('link', { name: 'Notifications', exact: true })).toBeVisible()
+
+  // Mark all read, and the link to notification settings.
+  await page.evaluate(() => {
+    const rows = JSON.parse(localStorage.getItem('amp.device.notifications') ?? '[]')
+    localStorage.setItem(
+      'amp.device.notifications',
+      JSON.stringify(rows.map((n: { read_at: string | null }) => ({ ...n, read_at: null }))),
+    )
+  })
+  await page.goto('/notifications')
+  await expect(page.getByText('New', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Mark all read' }).click()
+  await expect(page.getByText('New', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Mark all read' })).toHaveCount(0)
+  await page.getByRole('link', { name: 'Settings' }).click()
+  await expect(page).toHaveURL(/\/settings#notifications$/)
+
+  // Nothing left: a friendly empty state.
+  await page.evaluate(() => localStorage.setItem('amp.device.notifications', '[]'))
+  await page.goto('/notifications')
+  await expect(page.getByText('You’re all caught up')).toBeVisible()
   expect(errors).toEqual([])
 })
 
