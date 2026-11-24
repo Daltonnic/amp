@@ -37,6 +37,12 @@ describe('summarizeCheckIn', () => {
     ).toBe("Today I'm feeling anxious, lonely and worn out (temptation 7/10).")
   })
 
+  it('leaves out a temptation of 0', () => {
+    expect(summarizeCheckIn(checkIn({ emotions: ['Peaceful'], temptation_level: 0 }))).toBe(
+      "Today I'm feeling peaceful.",
+    )
+  })
+
   it('handles a single feeling and intensity', () => {
     expect(summarizeCheckIn(checkIn({ emotions: ['Grieving'], intensity: 8 }))).toBe(
       "Today I'm feeling grieving (intensity 8/10).",

@@ -178,6 +178,7 @@ export default function CheckIn() {
               label="Temptation level"
               value={draft.temptation_level ?? 3}
               onChange={(v) => set('temptation_level', v)}
+              min={0}
               lowLabel="None"
               highLabel="Intense"
             />
@@ -185,6 +186,8 @@ export default function CheckIn() {
               label="Stress level"
               value={draft.stress_level ?? 5}
               onChange={(v) => set('stress_level', v)}
+              min={0}
+              lowLabel="None"
             />
           </div>
         )

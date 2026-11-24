@@ -104,12 +104,15 @@ export function IntensitySlider({
   onChange,
   lowLabel = 'Low',
   highLabel = 'High',
+  min = 1,
 }: {
   label: string
   value: number
   onChange: (value: number) => void
   lowLabel?: string
   highLabel?: string
+  /** Lowest value; 0 lets someone say "none at all". */
+  min?: number
 }) {
   return (
     <div className="space-y-2">
@@ -127,7 +130,7 @@ export function IntensitySlider({
             onChange(v)
           }
         }}
-        min={1}
+        min={min}
         max={10}
         step={1}
         aria-label={label}

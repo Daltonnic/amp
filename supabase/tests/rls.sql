@@ -32,6 +32,27 @@ do $$ begin
   end;
 end $$;
 
+-- Temptation and stress go from 0 to 10; intensity from 1 to 10.
+do $$ begin
+  insert into public.check_ins (track, date, temptation_level, stress_level) values ('men', current_date, 0, 0);
+  delete from public.check_ins where temptation_level = 0;
+  begin
+    insert into public.check_ins (track, date, stress_level) values ('men', current_date, 11);
+    raise exception 'stress range not enforced';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.check_ins (track, date, temptation_level) values ('men', current_date, -1);
+    raise exception 'temptation range not enforced';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.check_ins (track, date, intensity) values ('spouse', current_date, 0);
+    raise exception 'intensity range not enforced';
+  exception when check_violation then null;
+  end;
+end $$;
+
 -- Gender only accepts man or woman.
 do $$ begin
   begin

@@ -26,6 +26,7 @@ export function summarizeCheckIn(
 ): string {
   if (!checkIn) return ''
   const feelings = joinFeelings([...checkIn.emotions, checkIn.custom_emotion])
+  // A level of 0 ("none") isn't worth mentioning in a text.
   const levels = [
     checkIn.intensity ? `intensity ${checkIn.intensity}/10` : null,
     checkIn.temptation_level ? `temptation ${checkIn.temptation_level}/10` : null,

@@ -114,6 +114,13 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
   )
   await next.click()
   await expect(page.getByText('Temptation level')).toBeVisible()
+  // Stress can go all the way down to 0 ("none").
+  const stress = page.getByRole('slider', { name: 'Stress level' })
+  await expect(stress).toHaveAttribute('aria-valuemin', '0')
+  await stress.focus()
+  await page.keyboard.press('Home')
+  await expect(stress).toHaveAttribute('aria-valuenow', '0')
+  await expect(page.getByText('0/10')).toBeVisible()
   await next.click()
   await page.getByLabel('Any recent triggers?').fill('Late night scrolling')
   await next.click()
@@ -140,6 +147,7 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
   expect(stored[0].custom_emotion).toBe('Tired but hopeful')
   expect(stored[0].intensity).toBeNull()
   expect(stored[0].temptation_level).toBe(3)
+  expect(stored[0].stress_level).toBe(0)
 
   // Journal: write from a guided prompt, view, edit, delete.
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Journal' }).click()
