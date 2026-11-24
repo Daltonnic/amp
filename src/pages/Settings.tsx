@@ -52,6 +52,7 @@ import {
   useMyRoom,
 } from '@/data/groupQueries'
 import { LeaderBadge } from '@/components/group/Avatar'
+import { FreedomControls } from '@/components/FreedomCard'
 import {
   biometryInfo,
   clearLock,
@@ -156,15 +157,6 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
           )}
         </div>
         <Row title="Track" subtitle={trackLabel(p.track, gender)} />
-        {p.track === 'men' && (
-          <Row title="Freedom counter" subtitle="Show your days of freedom on Home (only you can see it)">
-            <Switch
-              checked={freedomShown}
-              onCheckedChange={setFreedomShown}
-              aria-label="Show freedom counter"
-            />
-          </Row>
-        )}
         {isLeader && (
           <Row title="Role" subtitle="You can approve members and choose leaders (More → Leaders)">
             <LeaderBadge />
@@ -172,6 +164,19 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
         )}
         {state.status === 'signed-in' && state.email && <Row title="Signed in as" subtitle={state.email} />}
       </Section>
+
+      {p.track === 'men' && (
+        <Section title="Freedom counter">
+          <Row title="Show on Home" subtitle="Only you can see it">
+            <Switch
+              checked={freedomShown}
+              onCheckedChange={setFreedomShown}
+              aria-label="Show freedom counter"
+            />
+          </Row>
+          <FreedomControls profile={p} />
+        </Section>
+      )}
 
       <Section title="Notifications">
         <PushSettings />

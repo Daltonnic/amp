@@ -589,17 +589,20 @@ test('notifications: one-tap button on Home, toggles in Settings', async ({ page
   expect(errors).toEqual([])
 })
 
-test('freedom counter: start, milestones, and starting again with grace', async ({ page }) => {
+test('freedom counter: start on Home; restart and edit in Settings', async ({ page }) => {
   const errors = watchErrors(page)
   await onboard(page, 'men', 'man')
 
-  const card = page.getByText('Freedom counter')
-  await expect(card).toBeVisible()
+  const card = page.locator('#freedom')
+  await expect(page.getByText('Freedom counter')).toBeVisible()
   await page.getByRole('button', { name: 'Start today' }).click()
-  await expect(page.locator('#freedom').getByText('Day 1', { exact: true })).toBeVisible()
+  await expect(card.getByText('Day 1', { exact: true })).toBeVisible()
   await expect(page.getByText(/1 day to 1 day/)).toBeVisible()
+  // Restarting and editing aren't on Home.
+  await expect(page.getByRole('button', { name: /Start again|Edit start date/ })).toHaveCount(0)
 
-  // Started 30 days ago: a milestone to celebrate.
+  // Settings: set the start 30 days back.
+  await page.goto('/settings')
   await page.getByRole('button', { name: 'Edit start date' }).click()
   const thirtyDaysAgo = await page.evaluate(() => {
     const d = new Date()
@@ -607,22 +610,35 @@ test('freedom counter: start, milestones, and starting again with grace', async 
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   })
   await page.getByLabel('My current stretch of freedom began on').fill(thirtyDaysAgo)
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByText(/30 days of freedom · since/)).toBeVisible()
+
+  // Home celebrates the milestone; the small badge shows the count too.
+  await page.goto('/home')
   await expect(page.getByText('30 days of freedom!')).toBeVisible()
-  // The small badge at the top shows the count too, and jumps to the counter.
+  await expect(page.getByText(/30 days to 60 days/)).toBeVisible()
   const badge = page.getByRole('link', { name: '30 days of freedom. Show freedom counter' })
   await expect(badge).toBeVisible()
   await expect(badge).toContainText('Days of Freedom')
-  await expect(page.getByText(/30 days to 60 days/)).toBeVisible()
 
-  // Starting again: grace, not shame, and the longest stretch is kept.
+  // Settings: starting again is met with grace, and the longest stretch is kept.
+  await page.goto('/settings')
   await page.getByRole('button', { name: 'Start again' }).click()
   const grace = page.getByRole('dialog', { name: 'Grace for today' })
   await expect(grace.getByText(/new every morning/)).toBeVisible()
   await expect(grace.getByText(/Your 30 days still count/)).toBeVisible()
   await grace.getByRole('button', { name: 'Start again today' }).click()
-  await expect(page.locator('#freedom').getByText('Day 1', { exact: true })).toBeVisible()
   await expect(page.getByText(/Longest: 30 days/)).toBeVisible()
+  await page.goto('/home')
+  await expect(card.getByText('Day 1', { exact: true })).toBeVisible()
+  await expect(page.getByText(/Longest: 30 days/)).toBeVisible()
+
+  // "Reach out to someone first" opens Help Me Now.
+  await page.goto('/settings')
+  await page.getByRole('button', { name: 'Start again' }).click()
+  await page.getByRole('button', { name: 'Reach out to someone first' }).click()
+  await expect(page.getByRole('dialog', { name: 'I Need Support' })).toBeVisible()
+  await page.keyboard.press('Escape')
 
   // It can be hidden in Settings.
   await page.goto('/settings')

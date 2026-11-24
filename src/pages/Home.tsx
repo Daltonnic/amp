@@ -80,7 +80,7 @@ export default function Home() {
         <WeeklyInsights track={track} />
         <TodayCheckInCard checkIn={today.data ?? null} />
         <TodaysFocus track={track} />
-        <FreedomCard profile={profile.data} onReachOut={() => setHelpOpen(true)} />
+        <FreedomCard profile={profile.data} />
       </div>
       <SupportSheet open={helpOpen} onOpenChange={setHelpOpen} todayCheckIn={today.data ?? null} />
     </PullToRefresh>
