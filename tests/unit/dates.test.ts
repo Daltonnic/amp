@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { dailyPick, greeting, lastNDays, localDate } from '@/lib/dates'
-import { openingMessage } from '@/components/GroundingGuide'
 
 describe('dates', () => {
   it('uses the local calendar date, not UTC', () => {
@@ -30,25 +29,5 @@ describe('dates', () => {
 
   it('rotates daily picks', () => {
     expect(dailyPick(['a', 'b', 'c'], 4)).toBe('b')
-  })
-})
-
-describe('Grounding Guide opening message', () => {
-  it('summarizes the trigger log with readable labels', () => {
-    const text = openingMessage({
-      emotional_state: 'Lonely',
-      trigger_type: 'digital',
-      intensity: 8,
-      thoughts: 'No one cares',
-    })
-    expect(text).toContain('- Emotional state: Lonely')
-    expect(text).toContain('- Trigger type: Digital')
-    expect(text).toContain('- Intensity: 8/10')
-    expect(text).toContain('- My thoughts: No one cares')
-    expect(text).not.toContain('What happened')
-  })
-
-  it('has a fallback without a log', () => {
-    expect(openingMessage(null)).toBe('I just experienced a trigger and need help grounding.')
   })
 })

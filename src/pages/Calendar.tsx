@@ -13,6 +13,7 @@ import {
   Bell,
   CalendarDays,
   CalendarPlus,
+  Check,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -22,6 +23,7 @@ import {
   Repeat as RepeatIcon,
   Trash2,
   Users,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AboutYouPrompt } from '@/components/AboutYouPrompt'
@@ -32,10 +34,27 @@ import { Label, Skeleton } from '@/components/ui/controls'
 import { DialogDescription, DialogTitle, Sheet, SheetContent } from '@/components/ui/dialog'
 import { Input, Textarea } from '@/components/ui/input'
 import { GROUP_ROOMS } from '@/content/group'
-import { useCalendarEvent, useDeleteEvent, useOccurrences, useSaveEvent } from '@/data/calendarQueries'
+import { occurrenceKey } from '@/data/calendar'
+import {
+  useCalendarEvent,
+  useDeleteEvent,
+  useOccurrences,
+  useRsvp,
+  useRsvpPeople,
+  useRsvpSummary,
+  useSaveEvent,
+} from '@/data/calendarQueries'
 import { useIsLeader, useLeaders, useMyRoom } from '@/data/groupQueries'
 import { useProfile } from '@/data/queries'
-import type { CalendarEvent, CalendarEventInput, CalendarOccurrence, GroupRoomId, Repeat } from '@/data/types'
+import type {
+  CalendarEvent,
+  CalendarEventInput,
+  CalendarOccurrence,
+  GroupRoomId,
+  Repeat,
+  RsvpResponse,
+  RsvpSummary,
+} from '@/data/types'
 import {
   dayLabel,
   DURATIONS,
@@ -74,6 +93,8 @@ export default function Calendar() {
   const soon = addDays(today, 60)
   const to = lastGridDay > soon ? lastGridDay : soon
   const occurrences = useOccurrences(from, to, !leaders.isPending)
+  const rsvps = useRsvpSummary(from, to, !leaders.isPending)
+  const rsvpFor = (o: CalendarOccurrence) => rsvps.data?.get(occurrenceKey(o.event_id, o.starts_at))
 
   const visible = useMemo(
     () => (occurrences.data ?? []).filter((o) => filter === 'all' || o.rooms.includes(filter)),
@@ -230,7 +251,12 @@ export default function Calendar() {
           <ul className="space-y-2">
             {onDay(selected).map((o) => (
               <li key={`${o.event_id}-${o.starts_at}`}>
-                <OccurrenceRow occurrence={o} showRooms={isLeader} onOpen={() => setOpenId(o)} />
+                <OccurrenceRow
+                  occurrence={o}
+                  rsvp={rsvpFor(o)}
+                  showRooms={isLeader}
+                  onOpen={() => setOpenId(o)}
+                />
               </li>
             ))}
           </ul>
@@ -251,7 +277,13 @@ export default function Calendar() {
           <ul className="space-y-2">
             {upcoming.map((o) => (
               <li key={`${o.event_id}-${o.starts_at}`}>
-                <OccurrenceRow occurrence={o} showDay showRooms={isLeader} onOpen={() => setOpenId(o)} />
+                <OccurrenceRow
+                  occurrence={o}
+                  rsvp={rsvpFor(o)}
+                  showDay
+                  showRooms={isLeader}
+                  onOpen={() => setOpenId(o)}
+                />
               </li>
             ))}
           </ul>
@@ -260,6 +292,7 @@ export default function Calendar() {
 
       <EventSheet
         occurrence={openId}
+        rsvp={openId ? rsvpFor(openId) : undefined}
         isLeader={isLeader}
         onClose={() => setOpenId(null)}
         onEdit={(event) => {
@@ -281,11 +314,13 @@ export default function Calendar() {
 
 function OccurrenceRow({
   occurrence: o,
+  rsvp,
   showDay = false,
   showRooms = false,
   onOpen,
 }: {
   occurrence: CalendarOccurrence
+  rsvp?: RsvpSummary
   showDay?: boolean
   showRooms?: boolean
   onOpen: () => void
@@ -299,11 +334,24 @@ function OccurrenceRow({
     >
       <span className="w-1 shrink-0 rounded-full bg-primary" aria-hidden="true" />
       <span className="min-w-0 flex-1">
-        <span className="block font-semibold text-foreground">{o.title}</span>
+        <span className="flex items-center gap-2">
+          <span className="min-w-0 truncate font-semibold text-foreground">{o.title}</span>
+          {rsvp?.mine === 'yes' && (
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+              <Check className="size-3" aria-hidden="true" /> Going
+            </span>
+          )}
+          {rsvp?.mine === 'no' && (
+            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              Can’t make it
+            </span>
+          )}
+        </span>
         <span className="mt-0.5 block text-xs text-muted-foreground">
           {showDay && `${dayLabel(start)} · `}
           {timeRange(o)}
           {o.location && ` · ${o.location}`}
+          {rsvp && rsvp.going > 0 && ` · ${rsvp.going} going`}
         </span>
         {showRooms && (
           <span className="mt-1 block truncate text-[11px] text-muted-foreground">
@@ -327,11 +375,13 @@ function Detail({ icon, children }: { icon: ReactNode; children: ReactNode }) {
 
 function EventSheet({
   occurrence: o,
+  rsvp,
   isLeader,
   onClose,
   onEdit,
 }: {
   occurrence: CalendarOccurrence | null
+  rsvp?: RsvpSummary
   isLeader: boolean
   onClose: () => void
   onEdit: (event: CalendarEvent) => void
@@ -431,6 +481,7 @@ function EventSheet({
           </div>
         ) : (
           <div className="space-y-2 pb-2">
+            <RsvpBox occurrence={o} rsvp={rsvp} isLeader={isLeader} />
             <Button variant="outline" className="w-full" onClick={addToCalendar}>
               <CalendarPlus aria-hidden="true" /> Add to my calendar
             </Button>
@@ -746,5 +797,84 @@ function EventForm({
         </form>
       </SheetContent>
     </Sheet>
+  )
+}
+
+/** Going / Can't make it for this date, with the count (and names, for leaders). */
+function RsvpBox({
+  occurrence: o,
+  rsvp,
+  isLeader,
+}: {
+  occurrence: CalendarOccurrence
+  rsvp?: RsvpSummary
+  isLeader: boolean
+}) {
+  const answer = useRsvp()
+  const people = useRsvpPeople(o.event_id, o.starts_at, isLeader)
+  const mine = rsvp?.mine ?? null
+  const going = rsvp?.going ?? 0
+  const ended = new Date(o.ends_at) < new Date()
+
+  const choose = (response: RsvpResponse) =>
+    answer.mutate(
+      { eventId: o.event_id, start: o.starts_at, response: mine === response ? null : response },
+      {
+        onSuccess: () => hapticTap(),
+        onError: (err) => toast.error(errorMessage(err)),
+      },
+    )
+
+  const yes = (people.data ?? []).filter((p) => p.response === 'yes')
+  const no = (people.data ?? []).filter((p) => p.response === 'no')
+
+  return (
+    <div className="space-y-3 rounded-xl border p-3" role="group" aria-label="RSVP">
+      {!ended && (
+        <>
+          <p className="text-sm font-medium text-foreground">Are you coming?</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={mine === 'yes' ? 'default' : 'outline'}
+              aria-pressed={mine === 'yes'}
+              onClick={() => choose('yes')}
+            >
+              <Check aria-hidden="true" /> Going
+            </Button>
+            <Button
+              variant={mine === 'no' ? 'secondary' : 'outline'}
+              aria-pressed={mine === 'no'}
+              onClick={() => choose('no')}
+            >
+              <X aria-hidden="true" /> Can’t make it
+            </Button>
+          </div>
+        </>
+      )}
+      <p className="text-xs text-muted-foreground" aria-live="polite">
+        {going === 0
+          ? ended
+            ? 'No one said they were going.'
+            : 'No one has said they’re going yet.'
+          : `${going} ${ended ? (going === 1 ? 'person said they were' : 'people said they were') : ''}${ended ? ' going' : 'going'}`}
+        {!ended && mine === 'no' && ' · You won’t get reminders for this date.'}
+      </p>
+      {isLeader && (yes.length > 0 || no.length > 0) && (
+        <div className="space-y-1 border-t pt-2 text-xs">
+          {yes.length > 0 && (
+            <p>
+              <span className="font-semibold text-foreground">Going ({yes.length}): </span>
+              <span className="text-muted-foreground">{yes.map((p) => p.shown_name).join(', ')}</span>
+            </p>
+          )}
+          {no.length > 0 && (
+            <p>
+              <span className="font-semibold text-foreground">Can’t make it ({no.length}): </span>
+              <span className="text-muted-foreground">{no.map((p) => p.shown_name).join(', ')}</span>
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   )
 }

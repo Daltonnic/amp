@@ -53,26 +53,17 @@ Set the sender name to something like "AMP: The Journey". Once connected you can
 
 Two Edge Functions:
 
-| Function          | What it does                                            | Needs               |
-| ----------------- | ------------------------------------------------------- | ------------------- |
-| `delete-account`  | Settings → Delete Account (required by both app stores) | nothing extra       |
-| `grounding-guide` | The AI Grounding Guide on Trigger Awareness             | `ANTHROPIC_API_KEY` |
+| Function         | What it does                                            | Needs         |
+| ---------------- | ------------------------------------------------------- | ------------- |
+| `delete-account` | Settings → Delete Account (required by both app stores) | nothing extra |
 
 ```bash
 npx supabase functions deploy delete-account --no-verify-jwt
 ```
 
 ```bash
-npx supabase functions deploy grounding-guide --no-verify-jwt
+
 ```
-
-To turn on the Grounding Guide, add an [Anthropic API key](https://console.anthropic.com):
-
-```bash
-npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-```
-
-Until then, the guide politely says it isn't set up yet; the grounding tools always work. Optional: `GROUNDING_GUIDE_MODEL` (default `claude-opus-5-5`), `GROUNDING_GUIDE_EFFORT` (`low` default), and `ALLOWED_ORIGINS` (comma-separated origins allowed to call the functions). The guide's instructions live in `supabase/functions/grounding-guide/prompt.ts` (keep its SAFETY section). Limit: 60 messages per person per hour, 200 per day.
 
 "I Need Support" and "Request Check-In" don't use the server at all: they open a ready-to-send text (or email) on the person's own phone.
 

@@ -46,7 +46,7 @@ Already handled in the project:
 - Face ID permission text, export-compliance flag (standard HTTPS only), portrait orientation.
 - iPhone-only (iPads run it in compatibility mode, so iPad screenshots aren't required).
 - `PrivacyInfo.xcprivacy` privacy manifest.
-- In-app account deletion (Guideline 5.1.1(v)) and AI data-sharing consent (5.1.2).
+- In-app account deletion (Guideline 5.1.1(v)).
 - No third-party login, so Sign in with Apple isn't required.
 
 ## Android — Google Play
@@ -90,7 +90,7 @@ Already handled in the project:
 > • Daily check-ins — name what you feel, notice patterns over the week
 > • Grounding tools — slow breathing, body grounding, 5-4-3-2-1, guided prayer, Scripture and truth reminders
 > • A private journal with guided prompts and morning and evening templates
-> • Trigger awareness — log what happened and work through it with the AI Grounding Guide
+> • Trigger awareness — log what happened, then turn to the grounding tools
 > • Identity & Scripture — truths about who you are in Christ
 > • Accountability — one tap to let a trusted person know you need support
 > • Daily reminders, PIN and Face ID lock, dark mode
@@ -125,7 +125,7 @@ Both stores ask what data the app collects. Accurate answers for this codebase:
 | Health & fitness, location, contacts list, identifiers, usage data, diagnostics | No        | —                  | —                           | —              |
 
 - **Apple — App Privacy:** use the table above. "Data used to track you": none.
-- **Google — Data safety:** the same data types. Encrypted in transit: **yes**. Users can request deletion: **yes** (in-app). Data shared with third parties: data is _processed_ by service providers (Supabase hosting and sign-in, Anthropic for the AI guide), which Google does not count as "sharing".
+- **Google — Data safety:** the same data types. Encrypted in transit: **yes**. Users can request deletion: **yes** (in-app). Data shared with third parties: data is _processed_ by service providers (Supabase hosting and sign-in, and Apple/Google/Mozilla push services for notifications), which Google does not count as "sharing".
 - **Google — account deletion URL:** Play requires a web link where people can ask for deletion. Use `https://<your-pwa>/settings` (sign in → Delete Account) and mention your support email on the privacy page.
 - **Google — Health apps declaration** (App content): declare it as a wellness/support app, not a medical device.
 
@@ -133,7 +133,7 @@ Both stores ask what data the app collects. Accurate answers for this codebase:
 
 - Don't describe the app as treating or curing addiction; "support", "recovery tools" and "Christ-centered" are accurate.
 - Avoid empty sections: the Library only appears once an article is published, so either publish a few articles before submitting or launch without it.
-- In the review notes, mention: the demo account, that the AI Grounding Guide is on Trigger Awareness → Log → Start Grounding Session, and that account deletion is in Settings.
+- In the review notes, mention: the demo account, that that account deletion is in Settings.
 - If Apple raises Guideline 4.2 (minimum functionality), point to the native features: scheduled local notifications, biometric app lock, haptics, privacy screen and offline grounding tools.
 
 ## Every release

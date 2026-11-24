@@ -156,6 +156,86 @@ begin
   end if;
 end $$;
 
+-- RSVPs: David is going to the next Tuesday Night Group, Paul can't make it.
+set role authenticated;
+select pg_temp.act_as('c0000000-0000-4000-8000-000000000001');
+do $$
+declare
+  ev uuid;
+  next_start timestamptz;
+  s record;
+begin
+  select event_id, starts_at into ev, next_start
+  from public.calendar_occurrences(now(), now() + interval '8 days')
+  where title = 'Tuesday Night Group' order by starts_at limit 1;
+  perform public.calendar_rsvp(ev, next_start, 'yes');
+  perform pg_temp.act_as('c0000000-0000-4000-8000-000000000004');
+  perform public.calendar_rsvp(ev, next_start, 'no');
+
+  select * into s from public.calendar_rsvp_summary(now(), now() + interval '8 days') where event_id = ev;
+  if s.going <> 1 or s.not_going <> 1 or s.mine <> 'no' then
+    raise exception 'summary wrong for Paul: % % %', s.going, s.not_going, s.mine;
+  end if;
+
+  -- Only leaders see who; members see counts only.
+  if (select count(*) from public.calendar_rsvp_people(ev, next_start)) <> 0 then
+    raise exception 'a member can see who RSVPed';
+  end if;
+  if exists (select 1 from public.calendar_rsvps where user_id <> 'c0000000-0000-4000-8000-000000000004') then
+    raise exception 'a member can read other people''s RSVPs';
+  end if;
+
+  -- A date that isn't a meeting, or has passed, can't be answered.
+  begin
+    perform public.calendar_rsvp(ev, next_start + interval '3 minutes', 'yes');
+    raise exception 'RSVP to a non-existent time accepted';
+  exception when raise_exception then
+    if sqlerrm not like '%doesn''t exist%' then raise; end if;
+  end;
+  begin
+    perform public.calendar_rsvp(ev, '2026-10-28 00:00:00+00', 'yes');
+    raise exception 'RSVP to a past meeting accepted';
+  exception when raise_exception then
+    if sqlerrm not like '%already happened%' then raise; end if;
+  end;
+
+  -- Someone outside the meeting's group can't answer.
+  perform pg_temp.act_as('c0000000-0000-4000-8000-000000000005');
+  begin
+    perform public.calendar_rsvp(ev, next_start, 'yes');
+    raise exception 'a woman RSVPed to a men''s meeting';
+  exception when insufficient_privilege then null;
+  end;
+  if exists (select 1 from public.calendar_rsvp_summary(now(), now() + interval '8 days') where event_id = ev) then
+    raise exception 'a woman sees a men''s meeting RSVP counts';
+  end if;
+
+  -- The leader sees names (as chosen to show).
+  perform pg_temp.act_as('c0000000-0000-4000-8000-000000000007');
+  if (select string_agg(shown_name || ':' || response, ',') from public.calendar_rsvp_people(ev, next_start)) <> 'Steady:yes,Paul:no' then
+    raise exception 'leader RSVP list wrong: %', (select string_agg(shown_name || ':' || response, ',') from public.calendar_rsvp_people(ev, next_start));
+  end if;
+
+  -- David changes his mind to "can't make it": no reminder for that date.
+  perform pg_temp.act_as('c0000000-0000-4000-8000-000000000001');
+  perform public.calendar_rsvp(ev, next_start, 'no');
+  reset role;
+  if exists (select 1 from public.calendar_push_recipients(ev, next_start) where endpoint = 'https://push.example.org/david') then
+    raise exception 'reminder would go to someone who can''t make it';
+  end if;
+  if not exists (select 1 from public.calendar_push_recipients(ev, next_start + interval '7 days') where endpoint = 'https://push.example.org/david') then
+    raise exception 'the next week''s reminder should still go to David';
+  end if;
+  set role authenticated;
+
+  -- Clearing an answer.
+  perform public.calendar_rsvp(ev, next_start, null);
+  if exists (select 1 from public.calendar_rsvps where user_id = 'c0000000-0000-4000-8000-000000000001') then
+    raise exception 'clearing an RSVP failed';
+  end if;
+end $$;
+reset role;
+
 -- Signed-out callers can't read the calendar.
 set role anon;
 do $$ begin

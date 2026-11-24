@@ -26,7 +26,7 @@ Every screen from the Base44 app, with its original wording, Scripture, prayers 
 | Group                | `/group`          | GroupMe-style chat, one of four separate groups per person (see [docs/GROUP_CHAT.md](docs/GROUP_CHAT.md))                           |
 | Resources            | `/resources`      | Men's and spouses' articles                                                                                                         |
 | Library              | `/library`        | Admin-published articles (from the database); appears in the menu once at least one is published                                    |
-| Trigger Awareness    | `/triggers`       | Trigger log + AI **Grounding Guide** chat                                                                                           |
+| Trigger Awareness    | `/triggers`       | Trigger log, then straight to the grounding tools                                                                                   |
 | Identity & Scripture | `/identity`       | Truths and Scripture meditation                                                                                                     |
 | Accountability       | `/accountability` | Trusted contacts; request a check-in, text, call                                                                                    |
 | Calendar             | `/calendar`       | Each group's meetings; leaders add events with repeats and reminder notifications ([docs/CALENDAR.md](docs/CALENDAR.md))            |
@@ -61,7 +61,7 @@ src/
   lib/            auth, theme, reminders, app lock, haptics, dates, support texts
 supabase/
   migrations/     schema + Row Level Security (one owner per row)
-  functions/      grounding-guide (Claude), delete-account
+  functions/      notify-group (push notifications), delete-account
   tests/          RLS test suite (runs on plain PostgreSQL)
 ios/ android/     Capacitor native projects
 scripts/          Base44 → Supabase importer
@@ -69,7 +69,6 @@ scripts/          Base44 → Supabase importer
 
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS 4, Radix UI, TanStack Query, React Router.
 - **Backend:** [Supabase](https://supabase.com) — Postgres with Row Level Security, email + password auth, Edge Functions.
-- **AI Grounding Guide:** Claude (`claude-opus-5-5`) via the Anthropic API, streamed, with server-side refusal fallback. Conversations are not stored.
 - **Native:** Capacitor 8 (local notifications, biometrics, haptics, privacy screen, splash, edge-to-edge).
 - **PWA:** vite-plugin-pwa (offline app shell, install prompt, update prompt).
 

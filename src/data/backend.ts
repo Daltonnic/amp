@@ -1,4 +1,4 @@
-import type { ChatMessage, Insert, Patch, TableName, Tables } from './types'
+import type { Insert, Patch, TableName, Tables } from './types'
 
 export interface ListQuery<T> {
   orderBy?: keyof T & string
@@ -24,22 +24,8 @@ export interface Backend {
    */
   readonly mode: 'cloud' | 'device'
   table<K extends TableName>(name: K): TableApi<Tables[K]>
-  /** Streams the Grounding Guide's reply, calling `onText` with each chunk. */
-  streamGroundingGuide(
-    messages: ChatMessage[],
-    onText: (chunk: string) => void,
-    signal?: AbortSignal,
-  ): Promise<void>
   /** Permanently deletes the account and every row that belongs to it. */
   deleteAccount(): Promise<void>
-}
-
-/** A feature that needs the cloud backend was used in device mode. */
-export class CloudOnlyError extends Error {
-  constructor(feature: string) {
-    super(`${feature} needs the online service, which isn't connected in this build.`)
-    this.name = 'CloudOnlyError'
-  }
 }
 
 /** The server refused because the user hit a rate limit. */

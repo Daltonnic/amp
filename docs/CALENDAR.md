@@ -17,6 +17,15 @@ meetings, and what's coming up. Tapping a meeting shows its time, how it
 repeats, where (web links are tappable), details and reminders, and offers
 **Add to my calendar** (an .ics file for the phone's own calendar).
 
+## RSVP
+
+Each meeting date has **Going** and **Can't make it** (tap again to clear).
+Everyone sees how many are going; leaders also see who, by the name each
+person chose to show. Someone who can't make it isn't sent reminders for that
+date (they still get them for later dates of a repeating meeting). Answers
+are per date and stored in `calendar_rsvps`; `calendar_rsvp()` only accepts a
+real, upcoming date of a meeting the person can see.
+
 ## Adding an event (leaders)
 
 Calendar → **Add event**:

@@ -23,6 +23,7 @@ export function NextMeeting() {
         <span className="block truncate font-semibold text-foreground">{o.title}</span>
         <span className="block text-xs text-muted-foreground">
           {dayLabel(start)} · {timeRange(o)}
+          {next.rsvp?.mine === 'yes' && <span className="font-semibold text-primary"> · You’re going</span>}
         </span>
       </span>
       <span className="flex shrink-0 items-center text-xs font-medium text-primary">

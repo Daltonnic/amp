@@ -218,10 +218,11 @@ async function joinApproved(db: SupabaseClient, userId: string) {
   )
 }
 
-async function calendarReminder(db: SupabaseClient, eventId: string, minutes: number) {
+async function calendarReminder(db: SupabaseClient, eventId: string, startsAt: string | null, minutes: number) {
   const { data: event } = await db.from('calendar_events').select('id, title').eq('id', eventId).maybeSingle()
   if (!event) return { sent: 0 }
-  const recipients = await db.rpc('calendar_push_recipients', { event_id: eventId })
+  // People who said they can't make it to this date aren't reminded.
+  const recipients = await db.rpc('calendar_push_recipients', { event_id: eventId, occurrence_start: startsAt })
   if (recipients.error) throw new Error(`calendar_push_recipients failed: ${recipients.error.message}`)
   return deliver(db, (recipients.data ?? []) as Recipient[], (r) =>
     eventReminderNotification({ eventId, title: event.title, minutes, preview: r.show_preview }),
@@ -235,7 +236,14 @@ Deno.serve(async (req) => {
     return respond(401, { error: 'Not allowed' })
   }
 
-  let body: { message_id?: unknown; event?: unknown; user_id?: unknown; event_id?: unknown; minutes?: unknown }
+  let body: {
+    message_id?: unknown
+    event?: unknown
+    user_id?: unknown
+    event_id?: unknown
+    starts_at?: unknown
+    minutes?: unknown
+  }
   try {
     body = (await req.json()) as typeof body
   } catch {
@@ -248,7 +256,8 @@ Deno.serve(async (req) => {
       const eventId = String(body.event_id ?? '')
       const minutes = Number(body.minutes)
       if (!UUID.test(eventId) || !Number.isFinite(minutes)) return respond(400, { error: 'Bad reminder' })
-      return respond(200, await calendarReminder(db, eventId, minutes))
+      const startsAt = typeof body.starts_at === 'string' ? body.starts_at : null
+      return respond(200, await calendarReminder(db, eventId, startsAt, minutes))
     }
     if (body.event === 'join_request' || body.event === 'join_approved') {
       const userId = String(body.user_id ?? '')

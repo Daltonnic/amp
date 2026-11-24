@@ -66,10 +66,6 @@ do $$ begin
   end;
 end $$;
 
--- The Edge Functions' service role can write rate-limit logs.
-reset role;
-set role service_role;
-insert into public.ai_usage (user_id) values ('11111111-1111-1111-1111-111111111111');
 reset role;
 
 -- A's data is intact; deleting A's auth user cascades everything.
@@ -80,8 +76,7 @@ do $$ begin
 end $$;
 delete from auth.users where id = '11111111-1111-1111-1111-111111111111';
 do $$ begin
-  if (select count(*) from public.journal_entries) + (select count(*) from public.profiles) + (select count(*) from public.check_ins)
-     + (select count(*) from public.ai_usage) <> 0
+  if (select count(*) from public.journal_entries) + (select count(*) from public.profiles) + (select count(*) from public.check_ins) <> 0
     then raise exception 'account deletion did not cascade'; end if;
 end $$;
 select 'RLS tests passed' as result;

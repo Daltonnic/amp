@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { format } from 'date-fns'
 import { Plus, Save, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { paths } from '@/app/routes'
-import { AiConsentDialog, GroundingGuide, hasAiConsent } from '@/components/GroundingGuide'
 import { ChipGroup, IntensitySlider } from '@/components/inputs'
 import { EmptyState, PageHeader, Screen, useBack } from '@/components/layout'
 import { PullToRefresh } from '@/components/PullToRefresh'
@@ -35,30 +34,7 @@ export default function TriggerAwareness() {
   const [params, setParams] = useSearchParams()
   const view = params.get('view') ?? 'list'
   const logs = useTriggerLogs()
-  const [guideFor, setGuideFor] = useState<TriggerLog | null>(null)
-  const [guideOpen, setGuideOpen] = useState(false)
-  const [consentOpen, setConsentOpen] = useState(false)
-
-  const openGuide = (log: TriggerLog | null) => {
-    setGuideFor(log)
-    if (hasAiConsent()) setGuideOpen(true)
-    else setConsentOpen(true)
-  }
-
-  const guide = (
-    <>
-      <AiConsentDialog open={consentOpen} onOpenChange={setConsentOpen} onAccept={() => setGuideOpen(true)} />
-      {guideOpen && (
-        <GroundingGuide
-          triggerLog={guideFor}
-          onClose={() => {
-            setGuideOpen(false)
-            if (view === 'grounding-prompt') setParams({}, { replace: true })
-          }}
-        />
-      )}
-    </>
-  )
+  const navigate = useNavigate()
 
   if (view === 'new')
     return (
@@ -66,7 +42,6 @@ export default function TriggerAwareness() {
     )
 
   if (view === 'grounding-prompt') {
-    const log = logs.data?.find((l) => l.id === params.get('logId')) ?? null
     return (
       <Screen>
         <PageHeader title="Trigger Logged" onBack={() => setParams({}, { replace: true })} />
@@ -77,11 +52,11 @@ export default function TriggerAwareness() {
           <div>
             <p className="font-semibold text-foreground">Good. You named it.</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Would you like to work through a grounding session right now?
+              Would you like to use a grounding tool right now?
             </p>
           </div>
-          <Button className="w-full" onClick={() => openGuide(log)}>
-            <ShieldCheck aria-hidden="true" /> Start Grounding Session
+          <Button className="w-full" onClick={() => navigate(paths.grounding)}>
+            <ShieldCheck aria-hidden="true" /> Open Grounding Tools
           </Button>
           <button
             type="button"
@@ -91,7 +66,6 @@ export default function TriggerAwareness() {
             Not right now
           </button>
         </Card>
-        {guide}
       </Screen>
     )
   }
@@ -139,13 +113,12 @@ export default function TriggerAwareness() {
                         {format(new Date(log.created_at), 'MMM d')}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => openGuide(log)}
+                    <Link
+                      to={paths.grounding}
                       className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs text-primary transition-colors hover:bg-primary/5"
                     >
                       <ShieldCheck className="size-3.5" aria-hidden="true" /> Ground through this
-                    </button>
+                    </Link>
                   </Card>
                 </li>
               ))}
@@ -153,7 +126,6 @@ export default function TriggerAwareness() {
           )}
         </Screen>
       </PullToRefresh>
-      {guide}
     </>
   )
 }

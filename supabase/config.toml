@@ -50,9 +50,6 @@ token_verifications = 30
 
 # Functions verify the caller's token themselves (see _shared/http.ts), which
 # works with both legacy and new Supabase API keys.
-[functions.grounding-guide]
-verify_jwt = false
-
 [functions.delete-account]
 verify_jwt = false
 

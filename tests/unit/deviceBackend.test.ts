@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { CloudOnlyError } from '@/data/backend'
 import { createDeviceBackend } from '@/data/deviceBackend'
 
 const backend = createDeviceBackend()
@@ -71,10 +70,6 @@ describe('device backend', () => {
       ]),
     )
     expect((await backend.table('library_articles').list()).map((a) => a.title)).toEqual(['Live'])
-  })
-
-  it('reports cloud-only features clearly', async () => {
-    await expect(backend.streamGroundingGuide([], () => {})).rejects.toBeInstanceOf(CloudOnlyError)
   })
 
   it('deleteAccount erases every on-device table', async () => {

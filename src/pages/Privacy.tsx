@@ -109,7 +109,9 @@ export default function Privacy() {
           <H>Calendar</H>
           <p>
             Leaders post meetings and events for each group. You see the calendar for your group, and leaders
-            see all of them. Events are visible to everyone in the groups they're posted to.
+            see all of them. Events are visible to everyone in the groups they're posted to. If you say you're
+            going (or can't make it), others see only how many are going; leaders also see the name you chose
+            to show.
           </p>
 
           <H>Notifications</H>
@@ -131,11 +133,6 @@ export default function Privacy() {
               with a message ready for you to review and send. It is sent from your own phone number or email
               account; AMP never sends it and keeps no copy. "I Need Support" includes a one-line summary of
               today's check-in, which you can edit before sending.
-            </li>
-            <li>
-              <strong>Grounding Guide (AI).</strong> If you start a Grounding Guide session, the trigger log
-              you started from and the messages you write are sent to our AI provider, Anthropic, solely to
-              generate replies. We do not store these conversations.
             </li>
           </ul>
 

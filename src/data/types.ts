@@ -176,11 +176,6 @@ export interface Tables {
 
 export type TableName = keyof Tables
 
-export interface ChatMessage {
-  role: 'user' | 'assistant'
-  content: string
-}
-
 // ---------------------------------------------------------------------------
 // Group chat (supabase/migrations/*_group_chat.sql)
 // ---------------------------------------------------------------------------
@@ -289,4 +284,21 @@ export interface CalendarOccurrence {
   /** ISO instant. */
   starts_at: string
   ends_at: string
+}
+
+export type RsvpResponse = 'yes' | 'no'
+
+/** RSVP counts for one date of a meeting, and your own answer. */
+export interface RsvpSummary {
+  event_id: string
+  occurrence_start: string
+  going: number
+  not_going: number
+  mine: RsvpResponse | null
+}
+
+/** Leaders: who answered (by the name they chose to show). */
+export interface RsvpPerson {
+  shown_name: string
+  response: RsvpResponse
 }

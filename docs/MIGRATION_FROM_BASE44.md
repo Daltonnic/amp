@@ -2,7 +2,7 @@
 
 > **Launching fresh?** If the Base44 app never had real users or Library articles, skip this guide — set up Supabase and start clean.
 
-Everything in the Base44 app's code has been rebuilt here. Three things live only in your Base44 account and need to be brought over by you: **your users' data**, **your Library articles**, and (optionally) **the Grounding Guide agent's instructions**.
+Everything in the Base44 app's code has been rebuilt here. Two things live only in your Base44 account and need to be brought over by you: **your users' data** and **your Library articles**.
 
 ## Mapping
 
@@ -16,7 +16,7 @@ Everything in the Base44 app's code has been rebuilt here. Three things live onl
 | `AccountabilityContact`                   | `accountability_contacts`                                                                                                                                                     |
 | `LibraryArticle`                          | `library_articles`                                                                                                                                                            |
 | `integrations.Core.SendEmail`             | Pre-written text / email sent from the person's own phone                                                                                                                     |
-| Agent `grounding_guide`                   | `grounding-guide` Edge Function (Claude)                                                                                                                                      |
+| Agent `grounding_guide` (AI)              | Removed; the grounding tools replace it                                                                                                                                       |
 | Base44 login (hosted page)                | Supabase Auth, email + password                                                                                                                                               |
 | `/Home`, `/CheckIn`, `/TriggerAwareness`… | `/home`, `/check-in`, `/triggers`… (old links redirect)                                                                                                                       |
 
@@ -65,15 +65,7 @@ The service-role key bypasses all security rules. Use it only in your terminal, 
 
 Imported accounts have no password yet. People tap **Forgot password?** on the sign-in screen, enter the **same email** they used on Base44, set a password from the emailed link, and their history is there. (Connect an email sender first — see SUPABASE_SETUP.md step 3.)
 
-## 4. Grounding Guide instructions (optional)
-
-The new Grounding Guide has its own carefully written instructions (`supabase/functions/grounding-guide/prompt.ts`). To keep the exact Base44 wording, open the Base44 editor → **Code → base44/agents → grounding_guide**, copy its instructions into `BASE_PROMPT`, keep the SAFETY section, and redeploy:
-
-```bash
-npx supabase functions deploy grounding-guide
-```
-
-## 5. Switch over
+## 4. Switch over
 
 1. Deploy the PWA ([DEPLOY_PWA.md](DEPLOY_PWA.md)) and test it with your own account.
 2. Re-export and re-import right before the switch to catch anything written since the first export (re-running is safe).

@@ -4,7 +4,16 @@ import { expandOccurrences } from '@/lib/calendar'
 import { isCloudConfigured } from '@/lib/config'
 import { getSupabase } from '@/lib/supabase'
 import { DEVICE_USER_ID } from './deviceBackend'
-import type { CalendarEvent, CalendarEventInput, CalendarOccurrence, Profile } from './types'
+import type {
+  CalendarEvent,
+  CalendarEventInput,
+  CalendarOccurrence,
+  GroupMember,
+  Profile,
+  RsvpPerson,
+  RsvpResponse,
+  RsvpSummary,
+} from './types'
 
 /**
  * The calendar. Leaders add, edit and delete events; everyone reads the
@@ -18,7 +27,16 @@ export interface CalendarApi {
   create(input: CalendarEventInput): Promise<CalendarEvent>
   update(id: string, input: CalendarEventInput): Promise<CalendarEvent>
   remove(id: string): Promise<void>
+  /** RSVP counts (and your answer) for meetings in a range. */
+  rsvpSummary(from: Date, to: Date): Promise<RsvpSummary[]>
+  /** Answer for one date of a meeting; null clears the answer. */
+  rsvp(eventId: string, occurrenceStart: string, response: RsvpResponse | null): Promise<void>
+  /** Leaders: who answered for one date. */
+  rsvpPeople(eventId: string, occurrenceStart: string): Promise<RsvpPerson[]>
 }
+
+/** Matches an RSVP to an occurrence regardless of timestamp formatting. */
+export const occurrenceKey = (eventId: string, start: string) => `${eventId}|${new Date(start).getTime()}`
 
 function fail(error: { message: string } | null) {
   if (error) throw new Error(error.message)
@@ -54,11 +72,49 @@ export function createSupabaseCalendar(sb: SupabaseClient): CalendarApi {
       const { error } = await sb.from('calendar_events').delete().eq('id', id)
       fail(error)
     },
+    async rsvpSummary(from, to) {
+      const { data, error } = await sb.rpc('calendar_rsvp_summary', {
+        range_start: from.toISOString(),
+        range_end: to.toISOString(),
+      })
+      fail(error)
+      return data as RsvpSummary[]
+    },
+    async rsvp(eventId, occurrenceStart, response) {
+      const { error } = await sb.rpc('calendar_rsvp', {
+        event_id: eventId,
+        occurrence_start: occurrenceStart,
+        response,
+      })
+      fail(error)
+    },
+    async rsvpPeople(eventId, occurrenceStart) {
+      const { data, error } = await sb.rpc('calendar_rsvp_people', {
+        event_id: eventId,
+        occurrence_start: occurrenceStart,
+      })
+      fail(error)
+      return data as RsvpPerson[]
+    },
   }
 }
 
 // On-device (development, previews and automated tests).
 const KEY = 'amp.device.calendar_events'
+const RSVP_KEY = 'amp.device.calendar_rsvps'
+
+interface DeviceRsvp {
+  event_id: string
+  occurrence_start: string
+  response: RsvpResponse
+}
+function loadRsvps(): DeviceRsvp[] {
+  try {
+    return JSON.parse(localStorage.getItem(RSVP_KEY) ?? '[]') as DeviceRsvp[]
+  } catch {
+    return []
+  }
+}
 
 function load(): CalendarEvent[] {
   try {
@@ -120,6 +176,37 @@ export function createDeviceCalendar(): CalendarApi {
     },
     async remove(id) {
       save(load().filter((e) => e.id !== id))
+    },
+    async rsvpSummary() {
+      // On this device there's only you.
+      return loadRsvps().map((r) => ({
+        event_id: r.event_id,
+        occurrence_start: r.occurrence_start,
+        going: r.response === 'yes' ? 1 : 0,
+        not_going: r.response === 'no' ? 1 : 0,
+        mine: r.response,
+      }))
+    },
+    async rsvp(eventId, occurrenceStart, response) {
+      const key = occurrenceKey(eventId, occurrenceStart)
+      const rest = loadRsvps().filter((r) => occurrenceKey(r.event_id, r.occurrence_start) !== key)
+      const next = response ? [...rest, { event_id: eventId, occurrence_start: occurrenceStart, response }] : rest
+      localStorage.setItem(RSVP_KEY, JSON.stringify(next))
+    },
+    async rsvpPeople(eventId, occurrenceStart) {
+      const key = occurrenceKey(eventId, occurrenceStart)
+      let name = 'You'
+      try {
+        const m = (JSON.parse(localStorage.getItem('amp.device.group_members') ?? '[]') as GroupMember[]).find(
+          (x) => x.user_id === DEVICE_USER_ID,
+        )
+        if (m?.display_name) name = m.display_name
+      } catch {
+        /* default */
+      }
+      return loadRsvps()
+        .filter((r) => occurrenceKey(r.event_id, r.occurrence_start) === key)
+        .map((r) => ({ shown_name: name, response: r.response }))
     },
   }
 }

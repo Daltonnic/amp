@@ -159,7 +159,7 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
   await expect(page.getByText('How did I do today — honestly, not harshly?')).toBeVisible()
   await page.getByRole('button', { name: 'Go back' }).click()
 
-  // Trigger awareness → log → grounding prompt → AI guide (unavailable offline/device mode)
+  // Trigger awareness → log → straight to the grounding tools
   await page.goto('/home')
   await page.getByRole('link', { name: 'Log Trigger' }).click()
   await expect(page.getByRole('heading', { name: 'Log a Trigger' })).toBeVisible()
@@ -171,17 +171,12 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
   await page.getByRole('button', { name: 'Reaching out' }).click()
   await save.click()
   await expect(page.getByText('Good. You named it.')).toBeVisible()
-  await page.getByRole('button', { name: 'Start Grounding Session' }).click()
-  // One-time AI disclosure and consent before anything is sent.
-  const consent = page.getByRole('alertdialog', { name: 'Before you start' })
-  await expect(consent.getByText(/Anthropic/)).toBeVisible()
-  await consent.getByRole('button', { name: 'I agree, continue' }).click()
-  const guide = page.getByRole('dialog', { name: 'Grounding Guide' })
-  await expect(guide).toBeVisible()
-  await expect(guide.getByText(/needs the online service/)).toBeVisible()
-  await guide.getByRole('button', { name: 'Close grounding guide' }).click()
+  await page.getByRole('button', { name: 'Open Grounding Tools' }).click()
+  await expect(page.getByRole('heading', { name: 'Grounding Tools' })).toBeVisible()
+  await page.goto('/triggers')
   await expect(page.getByRole('heading', { name: 'Trigger Awareness' })).toBeVisible()
   await expect(page.getByText('Alone at night')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Ground through this' })).toHaveAttribute('href', '/grounding')
 
   // Grounding tools
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Grounding' }).click()
@@ -201,7 +196,7 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
   const sessions = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('amp.device.grounding_sessions') ?? '[]'),
   )
-  expect(sessions.map((s: { type: string }) => s.type).sort()).toEqual(['breathing', 'guide', 'orienting'])
+  expect(sessions.map((s: { type: string }) => s.type).sort()).toEqual(['breathing', 'orienting'])
 
   expect(errors).toEqual([])
 })
@@ -705,7 +700,10 @@ test('calendar: leaders add meetings with reminders; each group sees its own', a
   const form = page.getByRole('dialog', { name: 'Add an event' })
   await form.getByLabel('Title').fill('Tuesday Night Group')
   // Your own group is chosen already.
-  await expect(form.getByRole('button', { name: 'Men in Recovery', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(form.getByRole('button', { name: 'Men in Recovery', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   const tomorrow = await page.evaluate(() => {
     const d = new Date()
     d.setDate(d.getDate() + 1)
@@ -717,8 +715,14 @@ test('calendar: leaders add meetings with reminders; each group sees its own', a
   await form.getByLabel('How often').selectOption('weekly')
   await form.getByLabel('Where (optional)').fill('https://meet.example.org/tuesday')
   // Suggested reminders are preset; add 15 minutes before.
-  await expect(form.getByRole('button', { name: '1 day before', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await expect(form.getByRole('button', { name: '1 hour before', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(form.getByRole('button', { name: '1 day before', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(form.getByRole('button', { name: '1 hour before', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   await form.getByRole('button', { name: '15 minutes before', exact: true }).click()
   await form.getByRole('button', { name: 'Add event', exact: true }).click()
   await expect(form).toBeHidden()
@@ -737,11 +741,25 @@ test('calendar: leaders add meetings with reminders; each group sees its own', a
   await expect(details.getByText(/^Every week on /)).toBeVisible()
   await expect(details.getByText('Reminders: 1 day before, 1 hour before, 15 minutes before')).toBeVisible()
   await expect(details.getByRole('link', { name: 'https://meet.example.org/tuesday' })).toBeVisible()
-  await page.keyboard.press('Escape')
 
-  // Home shows the next meeting.
+  // RSVP: Going, with the count; leaders also see who.
+  const rsvp = details.getByRole('group', { name: 'RSVP' })
+  await expect(rsvp.getByText('No one has said they’re going yet.')).toBeVisible()
+  await rsvp.getByRole('button', { name: 'Going' }).click()
+  await expect(rsvp.getByRole('button', { name: 'Going' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(rsvp.getByText('1 going')).toBeVisible()
+  await expect(rsvp.getByText(/Going \(1\):/)).toBeVisible()
+  // Changing to "Can't make it" turns off reminders for that date.
+  await rsvp.getByRole('button', { name: 'Can’t make it' }).click()
+  await expect(rsvp.getByText(/won’t get reminders for this date/)).toBeVisible()
+  await rsvp.getByRole('button', { name: 'Going' }).click()
+  await page.keyboard.press('Escape')
+  await expect(upcoming.getByRole('button', { name: /Tuesday Night Group.*Going/ }).first()).toBeVisible()
+
+  // Home shows the next meeting, and that you're going.
   await page.goto('/home')
   await expect(page.getByRole('link', { name: /Next meeting.*Tuesday Night Group/ })).toBeVisible()
+  await expect(page.getByText('· You’re going')).toBeVisible()
 
   // The group chat has a calendar button.
   await page.goto('/group')

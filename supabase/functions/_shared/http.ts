@@ -61,22 +61,5 @@ export async function authenticate(req: Request): Promise<AuthedRequest | null> 
   return { user: data.user, userClient }
 }
 
-/** Counts rows in `table` for this user since `sinceMs` ago (service role). */
-export async function countRecent(
-  admin: SupabaseClient,
-  table: 'ai_usage',
-  userId: string,
-  sinceMs: number,
-): Promise<number> {
-  const since = new Date(Date.now() - sinceMs).toISOString()
-  const { count, error } = await admin
-    .from(table)
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('created_at', since)
-  if (error) throw error
-  return count ?? 0
-}
-
 export const HOUR = 60 * 60 * 1000
 export const DAY = 24 * HOUR

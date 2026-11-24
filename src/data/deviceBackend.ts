@@ -1,5 +1,4 @@
 import type { Backend, ListQuery, TableApi } from './backend'
-import { CloudOnlyError } from './backend'
 import type { Insert, Patch, TableName, Tables } from './types'
 
 /**
@@ -102,9 +101,6 @@ export function createDeviceBackend(): Backend {
   return {
     mode: 'device',
     table: (name) => deviceTable(name),
-    async streamGroundingGuide() {
-      throw new CloudOnlyError('The Grounding Guide')
-    },
     async deleteAccount() {
       for (const key of Object.keys(localStorage)) {
         if (key.startsWith(PREFIX)) localStorage.removeItem(key)

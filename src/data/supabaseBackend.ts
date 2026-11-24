@@ -1,8 +1,7 @@
 import { FunctionsHttpError, type SupabaseClient } from '@supabase/supabase-js'
-import { config } from '@/lib/config'
 import type { Backend, ListQuery, TableApi } from './backend'
 import { RateLimitedError } from './backend'
-import type { ChatMessage, Insert, Patch, TableName, Tables } from './types'
+import type { Insert, Patch, TableName, Tables } from './types'
 
 function supabaseTable<K extends TableName>(sb: SupabaseClient, name: K): TableApi<Tables[K]> {
   type Row = Tables[K]
@@ -65,39 +64,6 @@ export function createSupabaseBackend(sb: SupabaseClient): Backend {
     mode: 'cloud',
 
     table: (name) => supabaseTable(sb, name),
-
-    async streamGroundingGuide(messages: ChatMessage[], onText, signal) {
-      const { data } = await sb.auth.getSession()
-      const token = data.session?.access_token
-      if (!token) throw new Error('Please sign in again.')
-      const res = await fetch(`${config.supabaseUrl}/functions/v1/grounding-guide`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          apikey: config.supabaseKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ messages }),
-        signal,
-      })
-      if (!res.ok || !res.body) {
-        let message = 'The Grounding Guide is unavailable right now.'
-        try {
-          const body = (await res.json()) as { error?: string }
-          if (body.error) message = body.error
-        } catch {
-          /* ignore */
-        }
-        if (res.status === 429) throw new RateLimitedError(message)
-        throw new Error(message)
-      }
-      const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()
-      for (;;) {
-        const { value, done } = await reader.read()
-        if (done) break
-        if (value) onText(value)
-      }
-    },
 
     async deleteAccount() {
       const { error } = await sb.functions.invoke('delete-account', { body: {} })
