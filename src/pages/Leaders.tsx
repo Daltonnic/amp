@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { formatDistanceToNow } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { Check, Crown, Loader2, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Avatar, LeaderBadge } from '@/components/group/Avatar'
@@ -30,9 +30,9 @@ const STATUS_LABEL: Record<LeaderPerson['member_status'], string> = {
   removed: 'Removed',
 }
 
-const nameOf = (p: LeaderPerson) =>
-  p.shown_name || `${p.first_name} ${p.last_name}`.trim() || p.email || 'No name yet'
-const fullName = (p: LeaderPerson) => `${p.first_name} ${p.last_name}`.trim()
+/** The name each person chose to show their group (leaders never see emails or real names). */
+const nameOf = (p: LeaderPerson) => p.shown_name || 'No name chosen yet'
+const signedUp = (p: LeaderPerson) => `Signed up ${format(new Date(p.created_at), 'MMM d, yyyy')}`
 const groupOf = (p: LeaderPerson) =>
   p.room ? GROUP_ROOMS[p.room].name : p.track ? 'Hasn’t said man or woman yet' : 'Hasn’t finished setup'
 
@@ -170,10 +170,6 @@ function RequestCard({ person: p }: { person: LeaderPerson }) {
         <Avatar userId={p.user_id} name={nameOf(p)} className="size-10 text-sm" />
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-foreground">{nameOf(p)}</p>
-          {fullName(p) && fullName(p) !== nameOf(p) && (
-            <p className="text-sm text-muted-foreground">{fullName(p)}</p>
-          )}
-          {p.email && <p className="truncate text-sm text-muted-foreground">{p.email}</p>}
           <p className="mt-1 text-xs text-muted-foreground">
             Asked to join <span className="font-medium text-foreground">{groupOf(p)}</span>
             {p.requested_at && ` · ${formatDistanceToNow(new Date(p.requested_at), { addSuffix: true })}`}
@@ -222,9 +218,7 @@ function People({ people }: { people: LeaderPerson[] }) {
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return people
-    return people.filter((p) =>
-      [nameOf(p), fullName(p), p.email, groupOf(p)].some((v) => v.toLowerCase().includes(q)),
-    )
+    return people.filter((p) => [nameOf(p), groupOf(p)].some((v) => v.toLowerCase().includes(q)))
   }, [people, query])
 
   return (
@@ -236,7 +230,7 @@ function People({ people }: { people: LeaderPerson[] }) {
         />
         <Input
           aria-label="Search people"
-          placeholder="Search by name, email or group"
+          placeholder="Search by name or group"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-9"
@@ -268,11 +262,11 @@ function PersonRow({ person: p }: { person: LeaderPerson }) {
             <span className="truncate">{nameOf(p)}</span>
             {p.is_leader && <LeaderBadge />}
           </p>
-          {p.email && <p className="truncate text-sm text-muted-foreground">{p.email}</p>}
           <p className="mt-1 text-xs text-muted-foreground">
             {groupOf(p)} ·{' '}
             <span className="font-medium text-foreground">{STATUS_LABEL[p.member_status]}</span>
           </p>
+          <p className="text-xs text-muted-foreground">{signedUp(p)}</p>
         </div>
       </div>
       {!p.is_leader &&
@@ -340,7 +334,7 @@ function LeaderList({ people }: { people: LeaderPerson[] }) {
                     <span className="text-xs font-normal text-muted-foreground">(you)</span>
                   )}
                 </p>
-                {p.email && <p className="truncate text-sm text-muted-foreground">{p.email}</p>}
+                <p className="text-xs text-muted-foreground">{signedUp(p)}</p>
               </div>
               {!onlyOne && confirming !== p.user_id && (
                 <Button variant="ghost" size="sm" onClick={() => setConfirming(p.user_id)}>

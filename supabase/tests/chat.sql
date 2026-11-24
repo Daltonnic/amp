@@ -128,8 +128,12 @@ begin
   if (select count(*) from public.leader_people() where member_status = 'pending') <> 5 then
     raise exception 'leader should see 5 requests';
   end if;
-  if (select email from public.leader_people() where user_id = ids[5]::uuid) <> 'woman@example.com' then
-    raise exception 'leader should see emails';
+  if (select shown_name from public.leader_people() where user_id = ids[5]::uuid) <> 'Ruth' then
+    raise exception 'leader should see the name people chose to show';
+  end if;
+  -- …and nothing else that identifies them: no email or real names.
+  if pg_get_function_result('public.leader_people()'::regprocedure) ~* '(email|first_name|last_name)' then
+    raise exception 'leader_people exposes email or real names';
   end if;
   foreach waiting in array array[ids[1], ids[2], ids[3], ids[5], ids[6]]::uuid[] loop
     perform public.leader_review_request(waiting, true);

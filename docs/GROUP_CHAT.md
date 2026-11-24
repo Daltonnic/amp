@@ -57,8 +57,10 @@ bubble. Leaders have a **Leaders** page (More → Leaders) where they:
 
 - **Approve or decline requests** to join any of the four groups. Everyone who
   isn't a leader asks to join and waits; leaders get a notification when
-  someone asks, and the person gets one when they're approved. Leaders see each
-  person's chosen name, full name, email and group. A declined person can ask
+  someone asks, and the person gets one when they're approved. Leaders see only the
+  name each person chose to show their group, their group and when they signed
+  up, never their email or real first and last name (enforced in the database
+  by `public.leader_people()`). A declined person can ask
   again.
 - **See everyone** with an account and whether they're in a group.
 - **Make other people leaders**, or step someone down. There's always at least

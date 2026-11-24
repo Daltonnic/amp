@@ -231,10 +231,7 @@ export interface GroupReport {
 /** A row on the Leaders page (public.leader_people). */
 export interface LeaderPerson {
   user_id: string
-  email: string
-  first_name: string
-  last_name: string
-  /** The name their group sees. */
+  /** The name they chose to show their group. Leaders never see emails or real names. */
   shown_name: string
   gender: Gender | null
   track: Track | null

@@ -86,9 +86,10 @@ export default function Privacy() {
               in the app.
             </li>
             <li>
-              Ministry leaders approve each new member. To do that, leaders can see your name, email, which
-              group you belong to, and whether you've asked to join. Leaders can only read the messages of the
-              group they're in.
+              Ministry leaders approve each new member. To do that, leaders can see the name you chose to show
+              your group, which group you belong to, and whether you've asked to join. They never see your
+              email or your real first and last name (unless that's the name you chose to show). Leaders can
+              only read the messages of the group they're in.
             </li>
             <li>
               Leaders in your group can remove messages and remove people who break the group guidelines. When

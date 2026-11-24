@@ -441,9 +441,6 @@ export function createDeviceGroupChat(): GroupChatApi {
       return [
         {
           user_id: me,
-          email: '',
-          first_name: p?.display_name ?? '',
-          last_name: p?.last_name ?? '',
           shown_name: m?.display_name ?? '',
           gender: p?.gender ?? null,
           track: p?.track ?? null,
