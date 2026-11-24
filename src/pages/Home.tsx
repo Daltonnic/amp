@@ -328,7 +328,7 @@ function TodayCheckInCard({ checkIn }: { checkIn: CheckIn | null }) {
     ? [...checkIn.emotions, checkIn.custom_emotion.trim()].filter(Boolean).join(', ')
     : ''
   return (
-    <Link to={paths.checkIn} className="block">
+    <Link to={paths.checkIn} className="group block">
       <Card
         className={cn(
           'flex items-center gap-3 p-4 transition-colors',
@@ -348,6 +348,12 @@ function TodayCheckInCard({ checkIn }: { checkIn: CheckIn | null }) {
             {done ? `Feeling: ${feeling}` : 'Take a moment to check in with yourself'}
           </p>
         </div>
+        {!done && (
+          // The whole card is the link; this is its visible call to action.
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs transition-transform group-active:scale-95">
+            <ClipboardCheck className="size-3.5" aria-hidden="true" /> Check In
+          </span>
+        )}
       </Card>
     </Link>
   )

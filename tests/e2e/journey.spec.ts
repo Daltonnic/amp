@@ -84,8 +84,9 @@ test('men: onboarding, check-in, insights, journal, triggers, grounding', async 
   await page.keyboard.press('Escape')
   await expect(help).toBeHidden()
 
-  // Daily check-in (6 steps). A custom emotion alone is enough to continue.
-  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Check-In' }).click()
+  // Daily check-in (6 steps), opened from the orange Check In button on Home.
+  // A custom emotion alone is enough to continue.
+  await page.getByRole('link', { name: /How are you today\?.*Check In/ }).click()
   await expect(page.getByRole('heading', { name: 'Daily Check-In' })).toBeVisible()
   const next = page.getByRole('button', { name: 'Next' })
   await expect(next).toBeDisabled()
