@@ -595,7 +595,7 @@ test('freedom counter: start, milestones, and starting again with grace', async 
   const card = page.getByText('Freedom counter')
   await expect(card).toBeVisible()
   await page.getByRole('button', { name: 'Start today' }).click()
-  await expect(page.getByText('Day 1', { exact: true })).toBeVisible()
+  await expect(page.locator('#freedom').getByText('Day 1', { exact: true })).toBeVisible()
   await expect(page.getByText(/1 day to 1 day/)).toBeVisible()
 
   // Started 30 days ago: a milestone to celebrate.
@@ -608,6 +608,10 @@ test('freedom counter: start, milestones, and starting again with grace', async 
   await page.getByLabel('My current stretch of freedom began on').fill(thirtyDaysAgo)
   await page.getByRole('button', { name: 'Save' }).click()
   await expect(page.getByText('30 days of freedom!')).toBeVisible()
+  // The small badge at the top shows the count too, and jumps to the counter.
+  const badge = page.getByRole('link', { name: '30 days of freedom. Show freedom counter' })
+  await expect(badge).toBeVisible()
+  await expect(badge).toContainText('Days of Freedom')
   await expect(page.getByText(/30 days to 60 days/)).toBeVisible()
 
   // Starting again: grace, not shame, and the longest stretch is kept.
@@ -616,7 +620,7 @@ test('freedom counter: start, milestones, and starting again with grace', async 
   await expect(grace.getByText(/new every morning/)).toBeVisible()
   await expect(grace.getByText(/Your 30 days still count/)).toBeVisible()
   await grace.getByRole('button', { name: 'Start again today' }).click()
-  await expect(page.getByText('Day 1', { exact: true })).toBeVisible()
+  await expect(page.locator('#freedom').getByText('Day 1', { exact: true })).toBeVisible()
   await expect(page.getByText(/Longest: 30 days/)).toBeVisible()
 
   // It can be hidden in Settings.
@@ -625,7 +629,7 @@ test('freedom counter: start, milestones, and starting again with grace', async 
   await page.getByRole('button', { name: 'Save Settings' }).click()
   await page.goto('/home')
   await expect(page.getByRole('heading', { name: 'The Journey' })).toBeVisible()
-  await expect(page.getByText(/of freedom|Day 1/)).toHaveCount(0)
+  await expect(page.getByText(/of freedom|Day 1/i)).toHaveCount(0)
 
   expect(errors).toEqual([])
 })

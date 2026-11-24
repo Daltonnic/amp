@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { paths } from '@/app/routes'
 import { AboutYouPrompt } from '@/components/AboutYouPrompt'
-import { FreedomCard } from '@/components/FreedomCard'
+import { FreedomBadge, FreedomCard } from '@/components/FreedomCard'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { NotificationsPrompt } from '@/components/NotificationsPrompt'
 import { PullToRefresh } from '@/components/PullToRefresh'
@@ -62,22 +62,25 @@ export default function Home() {
       onRefresh={() => Promise.all([profile.refetch(), today.refetch(), week.refetch(), contacts.refetch()])}
     >
       <div className="mx-auto max-w-lg space-y-6 px-5 pb-4 pt-8">
-        <header>
-          <p className="text-sm text-muted-foreground">
-            {greeting()}
-            {name ? `, ${name}` : ''}
-          </p>
-          <h1 className="mt-0.5 font-display text-2xl font-semibold text-foreground">The Journey</h1>
+        <header className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm text-muted-foreground">
+              {greeting()}
+              {name ? `, ${name}` : ''}
+            </p>
+            <h1 className="mt-0.5 font-display text-2xl font-semibold text-foreground">The Journey</h1>
+          </div>
+          <FreedomBadge profile={profile.data} />
         </header>
         {!profile.data.gender && <AboutYouPrompt profileId={profile.data.id} />}
         <NotificationsPrompt />
         <InstallPrompt />
         <QuickActions onHelp={() => setHelpOpen(true)} />
         <Encouragement track={track} />
-        <FreedomCard profile={profile.data} onReachOut={() => setHelpOpen(true)} />
         <WeeklyInsights track={track} />
         <TodayCheckInCard checkIn={today.data ?? null} />
         <TodaysFocus track={track} />
+        <FreedomCard profile={profile.data} onReachOut={() => setHelpOpen(true)} />
       </div>
       <SupportSheet open={helpOpen} onOpenChange={setHelpOpen} todayCheckIn={today.data ?? null} />
     </PullToRefresh>

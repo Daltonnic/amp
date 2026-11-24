@@ -60,7 +60,7 @@ export function FreedomCard({ profile, onReachOut }: { profile: Profile; onReach
 
   if (!profile.freedom_start) {
     return (
-      <Card className="space-y-4 p-5">
+      <Card id="freedom" className="scroll-mt-6 space-y-4 p-5">
         <div className="flex items-start gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Flame className="size-5" aria-hidden="true" />
@@ -111,7 +111,7 @@ export function FreedomCard({ profile, onReachOut }: { profile: Profile; onReach
   const best = Math.max(profile.freedom_best_days, days)
 
   return (
-    <Card className="space-y-4 p-5">
+    <Card id="freedom" className="scroll-mt-6 space-y-4 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primary">
@@ -302,5 +302,36 @@ function Celebration({ days, shareKey }: { days: number; shareKey: string }) {
         {shared && <p className="text-xs font-medium text-primary">Shared with your group.</p>}
       </div>
     </div>
+  )
+}
+
+/** Small corner badge on Home: the day count. Tapping it scrolls to the full counter. */
+export function FreedomBadge({ profile }: { profile: Profile }) {
+  if (profile.track !== 'men' || profile.freedom_hidden || !profile.freedom_start) return null
+  const days = daysOfFreedom(profile.freedom_start)
+  return (
+    <a
+      href="#freedom"
+      onClick={(e) => {
+        e.preventDefault()
+        document.getElementById('freedom')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }}
+      aria-label={
+        days === 0
+          ? 'Day 1 of freedom. Show freedom counter'
+          : `${days} days of freedom. Show freedom counter`
+      }
+      className="flex min-w-[5.5rem] shrink-0 flex-col items-center rounded-xl border border-primary/20 bg-card/90 px-3 py-2 text-center shadow-xs transition-colors hover:bg-primary/5 active:scale-[0.98]"
+    >
+      <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
+        <Flame className="size-3" aria-hidden="true" /> Freedom
+      </span>
+      <span className="mt-0.5 font-display text-2xl font-semibold leading-none text-foreground">
+        {days === 0 ? 'Day 1' : days}
+      </span>
+      <span className="mt-0.5 text-[10px] leading-tight text-muted-foreground">
+        {days === 1 ? 'Day of Freedom' : 'Days of Freedom'}
+      </span>
+    </a>
   )
 }
