@@ -36,9 +36,10 @@ You need: a Mac with the current Xcode, and an Apple Developer Program membershi
 
 2. In Xcode, select the **App** target → **Signing & Capabilities**: choose your Team. Leave "Automatically manage signing" on.
 3. Set the version under **General**: Version `1.0.0`, Build `1` (increase Build for every upload).
-4. Run on a real iPhone once: test sign-in, a check-in, reminders (allow notifications, then set a reminder a minute ahead in Settings), Face ID lock, and Delete Account.
-5. **Product → Archive**, then **Distribute App → App Store Connect**. The build appears in TestFlight in about 15 minutes, where you can invite testers.
-6. In [App Store Connect](https://appstoreconnect.apple.com), create the app (bundle ID above) and fill in the listing below, then **Add for Review**.
+4. Set up group push notifications (Apple key + Firebase) as described in [PUSH_NOTIFICATIONS.md](PUSH_NOTIFICATIONS.md), and build with `VITE_NATIVE_PUSH=true`.
+5. Run on a real iPhone once: test sign-in, a check-in, reminders (allow notifications, then set a reminder a minute ahead in Settings), a group notification with the app closed, Face ID lock, and Delete Account.
+6. **Product → Archive**, then **Distribute App → App Store Connect**. The build appears in TestFlight in about 15 minutes, where you can invite testers.
+7. In [App Store Connect](https://appstoreconnect.apple.com), create the app (bundle ID above) and fill in the listing below, then **Add for Review**.
 
 Already handled in the project:
 
@@ -71,6 +72,7 @@ Already handled in the project:
 - Cloud backup and device-to-device transfer of app data disabled (personal data and the login session never leave the phone that way).
 - Exact-alarm permission removed (reminders don't need it).
 - Notification icon included.
+- Push notifications: add `google-services.json` and the Firebase secret first ([PUSH_NOTIFICATIONS.md](PUSH_NOTIFICATIONS.md)), and build with `VITE_NATIVE_PUSH=true`.
 
 ## Store listing
 
@@ -118,7 +120,8 @@ Both stores ask what data the app collects. Accurate answers for this codebase:
 | Name (optional display name; contacts' names)                                   | Yes       | Yes                | App functionality           | No             |
 | Phone number (accountability contacts)                                          | Yes       | Yes                | App functionality           | No             |
 | Sensitive info (recovery and faith context)                                     | Yes       | Yes                | App functionality           | No             |
-| Other user content (check-ins, journal, trigger logs)                           | Yes       | Yes                | App functionality           | No             |
+| Other user content (check-ins, journal, trigger logs, group messages)           | Yes       | Yes                | App functionality           | No             |
+| Device push token (only if notifications are turned on)                         | Yes       | Yes                | App functionality           | No             |
 | Health & fitness, location, contacts list, identifiers, usage data, diagnostics | No        | —                  | —                           | —              |
 
 - **Apple — App Privacy:** use the table above. "Data used to track you": none.

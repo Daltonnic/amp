@@ -10,6 +10,7 @@ import { useProfile } from '@/data/queries'
 import { useAuth } from '@/lib/auth'
 import { useKeyboardOpen } from '@/lib/keyboard'
 import { isNative, platform } from '@/lib/native'
+import { handleNotificationTaps, syncPush } from '@/lib/push'
 import { onReminderTapped } from '@/lib/reminders'
 import { paths } from './routes'
 
@@ -100,6 +101,18 @@ export function TabsLayout() {
   )
 }
 
+/** Opens the group when a notification is tapped; keeps this device's push registration current. */
+function PushBridge() {
+  const navigate = useNavigate()
+  const { state } = useAuth()
+  const userId = state.status === 'signed-in' ? state.userId : null
+  useEffect(() => handleNotificationTaps((url) => navigate(url)), [navigate])
+  useEffect(() => {
+    if (userId) void syncPush(userId).catch(() => {})
+  }, [userId])
+  return null
+}
+
 /** Live group messages and the unread badge, while the app is open. */
 function GroupLive() {
   const room = useMyRoom()
@@ -149,6 +162,7 @@ export function RootLayout() {
   return (
     <>
       <NativeBridge />
+      <PushBridge />
       <ScrollRestoration />
       <PageBackground />
       {content}

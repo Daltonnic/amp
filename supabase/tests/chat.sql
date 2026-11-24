@@ -249,6 +249,57 @@ do $$ begin
   if (select count(*) from public.chat_messages where room = 'women-recovery') <> 0 then raise exception 'moved member sees new group before joining'; end if;
 end $$;
 
+-- Push notifications: register this device, see who gets notified.
+select pg_temp.act_as('c0000000-0000-4000-8000-000000000004');
+select public.push_register('web', 'https://push.example.org/paul', 'BPAUL', 'apaul', true);
+select pg_temp.act_as('c0000000-0000-4000-8000-000000000005');
+select public.push_register('web', 'https://push.example.org/ruth', 'BRUTH', 'aruth', false);
+do $$
+declare
+  msg uuid;
+  n int;
+begin
+  -- Can't register a web endpoint without keys or https.
+  begin
+    perform public.push_register('web', 'http://push.example.org/x', 'k', 'a');
+    raise exception 'insecure web endpoint accepted';
+  exception when check_violation then null;
+  end;
+  -- Owners see only their own devices.
+  if (select count(*) from public.push_subscriptions) <> 1 then raise exception 'push: should see only own device'; end if;
+  -- Recipients can't be listed by app users.
+  begin
+    perform * from public.push_recipients(gen_random_uuid());
+    raise exception 'push_recipients callable by app users';
+  exception when insufficient_privilege then null;
+  end;
+  reset role;
+  -- David's message in the men's group reaches Paul (a man in that group), not Ruth.
+  select id into msg from public.chat_messages where room = 'men-recovery' and kind = 'text' and deleted_at is null limit 1;
+  select count(*) into n from public.push_recipients(msg) r where r.endpoint = 'https://push.example.org/paul';
+  if n <> 1 then raise exception 'push: Paul should be notified'; end if;
+  select count(*) into n from public.push_recipients(msg) r where r.endpoint = 'https://push.example.org/ruth';
+  if n <> 0 then raise exception 'push: Ruth must not be notified about the men''s group'; end if;
+  -- Paul blocks the author: no more notifications from him.
+  insert into public.chat_blocks (blocker, blocked)
+    select 'c0000000-0000-4000-8000-000000000004', user_id from public.chat_messages where id = msg;
+  select count(*) into n from public.push_recipients(msg);
+  if n <> 0 then raise exception 'push: blocked author still notifies'; end if;
+  -- The device moves to whoever registers it next.
+  set role authenticated;
+  perform pg_temp.act_as('c0000000-0000-4000-8000-000000000001');
+  perform public.push_register('web', 'https://push.example.org/paul', 'BNEW', 'anew', false);
+  reset role;
+  if (select user_id from public.push_subscriptions where endpoint = 'https://push.example.org/paul') <> 'c0000000-0000-4000-8000-000000000001' then
+    raise exception 'push: device did not move to the new account';
+  end if;
+  set role authenticated;
+  perform public.push_unregister('https://push.example.org/paul');
+  if exists (select 1 from public.push_subscriptions where endpoint = 'https://push.example.org/paul') then
+    raise exception 'push: unregister failed';
+  end if;
+end $$;
+
 -- Signed-out (anon) callers can't use any of it.
 reset role;
 set role anon;

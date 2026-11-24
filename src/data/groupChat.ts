@@ -166,8 +166,16 @@ export function createSupabaseGroupChat(sb: SupabaseClient): GroupChatApi {
       const filter = `room=eq.${room}`
       const channel = sb
         .channel(`group:${room}`)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter }, handler)
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter }, handler)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'chat_messages', filter },
+          handler,
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter },
+          handler,
+        )
         .subscribe((status) => {
           if (status !== 'SUBSCRIBED') return
           if (subscribedOnce) onReconnect()

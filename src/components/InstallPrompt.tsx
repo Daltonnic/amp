@@ -79,7 +79,8 @@ export function InstallPrompt() {
         ) : (
           <p className="text-xs leading-relaxed text-muted-foreground">
             Tap <Share className="inline size-3.5 align-text-bottom" aria-label="Share" /> in Safari, then{' '}
-            <span className="font-medium text-foreground">Add to Home Screen</span>.
+            <span className="font-medium text-foreground">Add to Home Screen</span>. Open AMP from your Home
+            Screen to get notifications from your group.
           </p>
         )}
       </div>

@@ -472,7 +472,10 @@ test('group chat: join with a chosen name, send, reply, like, delete, leave', as
   await expect(box).toHaveValue('')
 
   // Reply
-  await log.getByRole('button', { name: /^Your message at .*Show options$/ }).first().click()
+  await log
+    .getByRole('button', { name: /^Your message at .*Show options$/ })
+    .first()
+    .click()
   await page.getByRole('button', { name: 'Reply', exact: true }).click()
   await expect(page.getByText('Replying to You')).toBeVisible()
   await box.fill('And grateful for each of you.')
@@ -481,12 +484,18 @@ test('group chat: join with a chosen name, send, reply, like, delete, leave', as
   await expect(page.getByText('Replying to You')).toBeHidden()
 
   // Like
-  await log.getByRole('button', { name: /^Your message at .*Show options$/ }).first().click()
+  await log
+    .getByRole('button', { name: /^Your message at .*Show options$/ })
+    .first()
+    .click()
   await page.getByRole('button', { name: 'Like', exact: true }).click()
   await expect(log.getByRole('button', { name: 'Unlike (1 like)' })).toBeVisible()
 
   // Delete
-  await log.getByRole('button', { name: /^Your message at .*Show options$/ }).last().click()
+  await log
+    .getByRole('button', { name: /^Your message at .*Show options$/ })
+    .last()
+    .click()
   await page.getByRole('button', { name: 'Delete message' }).click()
   await page.getByRole('button', { name: 'Delete', exact: true }).click()
   await expect(log.getByText('This message was deleted')).toBeVisible()
@@ -507,6 +516,55 @@ test('group chat: join with a chosen name, send, reply, like, delete, leave', as
   await expect(page.getByText('Your group')).toBeHidden()
   await page.goto('/group')
   await expect(page.getByRole('button', { name: 'Join the group' })).toBeVisible()
+
+  expect(errors).toEqual([])
+})
+
+test('notifications: one-tap button on Home, toggles in Settings', async ({ page }) => {
+  // Stand-in for the browser's push service, kept across page loads.
+  await page.addInitScript(() => {
+    const key = 'amp.fakePush'
+    const state = JSON.parse(
+      sessionStorage.getItem(key) ?? '{"permission":"default","subscribed":false,"preview":false}',
+    )
+    ;(window as Window & { __ampFakePush?: unknown }).__ampFakePush = new Proxy(state, {
+      set(target, prop, value) {
+        target[prop] = value
+        sessionStorage.setItem(key, JSON.stringify(target))
+        return true
+      },
+    })
+  })
+  const errors = watchErrors(page)
+  await onboard(page, 'men', 'man')
+
+  const card = page.getByRole('heading', { name: 'Get notified when your group posts' })
+  await expect(card).toBeVisible()
+  await expect(page.getByText(/never the message itself/)).toBeVisible()
+  await page.getByRole('button', { name: 'Turn on notifications' }).click()
+  await expect(page.getByText(/Notifications are on/)).toBeVisible()
+  await expect(card).toBeHidden()
+
+  await page.goto('/settings')
+  const pushSwitch = page.getByRole('switch', { name: 'Push notifications' })
+  const previewSwitch = page.getByRole('switch', { name: 'Show message text in notifications' })
+  await expect(pushSwitch).toBeChecked()
+  await expect(previewSwitch).not.toBeChecked()
+  await expect(page.getByText(/Off for privacy/)).toBeVisible()
+  await previewSwitch.click()
+  await expect(previewSwitch).toBeChecked()
+  await pushSwitch.click()
+  await expect(pushSwitch).not.toBeChecked()
+  await expect(previewSwitch).toBeHidden()
+
+  // Off again: Home offers it again, and "Not now" hides it on this device.
+  await page.goto('/home')
+  await expect(card).toBeVisible()
+  await page.getByRole('button', { name: 'Not now' }).click()
+  await expect(card).toBeHidden()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'The Journey' })).toBeVisible()
+  await expect(card).toBeHidden()
 
   expect(errors).toEqual([])
 })

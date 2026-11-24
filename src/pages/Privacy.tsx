@@ -75,8 +75,8 @@ export default function Privacy() {
           <H>Your group</H>
           <p>
             There are four separate groups: men in recovery, women in recovery, men healing from betrayal, and
-            women healing from betrayal. You can only join, see and post in the one that matches your
-            profile. Joining is optional.
+            women healing from betrayal. You can only join, see and post in the one that matches your profile.
+            Joining is optional.
           </p>
           <ul className="space-y-1">
             <li>
@@ -98,6 +98,16 @@ export default function Privacy() {
             </li>
             <li>The group is text only: no photos, and links are never turned into clickable links.</li>
           </ul>
+
+          <H>Notifications</H>
+          <p>
+            If you turn on notifications, we store an address for your device from your browser's or phone's
+            push service (Apple, Google or Mozilla), so we can tell you when someone posts in your group. By
+            default a notification only says "New message in your group"; it shows the group, name and message
+            only if you turn on "Show message text". The content is encrypted on its way to your device. Turn
+            notifications off in Settings at any time; signing out or deleting your account removes your
+            device address.
+          </p>
 
           <H>When information leaves the app</H>
           <ul className="space-y-1">

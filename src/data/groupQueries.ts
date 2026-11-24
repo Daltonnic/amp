@@ -137,7 +137,12 @@ export function useGroupMessage(id: string | null, enabled: boolean) {
 }
 
 export function useGroupBlocks(enabled: boolean) {
-  return useQuery({ queryKey: groupKeys.blocks, queryFn: () => groupChat.blocks(), enabled, staleTime: 5 * 60_000 })
+  return useQuery({
+    queryKey: groupKeys.blocks,
+    queryFn: () => groupChat.blocks(),
+    enabled,
+    staleTime: 5 * 60_000,
+  })
 }
 
 export function useBlockMember() {
@@ -187,7 +192,8 @@ export function useSendMessage(room: GroupRoomId | null) {
   const qc = useQueryClient()
   const me = useMyUserId()
   return useMutation({
-    mutationFn: ({ body, replyTo }: { body: string; replyTo: string | null }) => groupChat.send(body, replyTo),
+    mutationFn: ({ body, replyTo }: { body: string; replyTo: string | null }) =>
+      groupChat.send(body, replyTo),
     onMutate: ({ body, replyTo }) => {
       if (!room || !me) return undefined
       const temp: GroupMessage = {
@@ -285,7 +291,8 @@ export function useGroupReports(room: GroupRoomId | null, enabled: boolean) {
 export function useRemoveMember(room: GroupRoomId | null) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ userId, reason }: { userId: string; reason: string }) => groupChat.removeMember(userId, reason),
+    mutationFn: ({ userId, reason }: { userId: string; reason: string }) =>
+      groupChat.removeMember(userId, reason),
     onSettled: () => {
       if (!room) return
       void qc.invalidateQueries({ queryKey: groupKeys.members(room) })

@@ -31,6 +31,7 @@ import type { GroupMember, GroupMessage, GroupRoomId } from '@/data/types'
 import { buildThread } from '@/lib/groupThread'
 import { useKeyboardOpen } from '@/lib/keyboard'
 import { hapticTap } from '@/lib/native'
+import { clearGroupNotifications } from '@/lib/push'
 import { cn, errorMessage } from '@/lib/utils'
 import { Avatar } from './Avatar'
 import { MembersSheet, MessageActionsSheet, ReportsSheet } from './sheets'
@@ -72,10 +73,7 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
   )
   // Pages are newest-first; the thread reads oldest-first.
   const messages = useMemo(
-    () =>
-      (messagesQ.data?.pages.flat() ?? [])
-        .filter((m) => !blocked.has(m.user_id))
-        .reverse(),
+    () => (messagesQ.data?.pages.flat() ?? []).filter((m) => !blocked.has(m.user_id)).reverse(),
     [messagesQ.data, blocked],
   )
   const byId = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages])
@@ -152,10 +150,16 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
 
   // --- Read state --------------------------------------------------------------
   useEffect(() => {
-    if (document.visibilityState === 'visible') markRead()
+    if (document.visibilityState !== 'visible') return
+    markRead()
+    void clearGroupNotifications()
   }, [newest?.id, markRead])
   useEffect(() => {
-    const onVisible = () => document.visibilityState === 'visible' && markRead()
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      markRead()
+      void clearGroupNotifications()
+    }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [markRead])
@@ -176,7 +180,10 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col">
       {/* Covers the status bar area so scrolled messages don't show behind it. */}
-      <div aria-hidden="true" className="fixed inset-x-0 top-0 z-30 h-[env(safe-area-inset-top)] bg-background" />
+      <div
+        aria-hidden="true"
+        className="fixed inset-x-0 top-0 z-30 h-[env(safe-area-inset-top)] bg-background"
+      />
 
       <header className="sticky top-[env(safe-area-inset-top)] z-20 flex items-center gap-2 border-b bg-background/90 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/75">
         <button
@@ -227,7 +234,9 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
           </div>
         )}
         {messagesQ.isSuccess && !hasNextPage && (
-          <p className="py-4 text-center text-xs text-muted-foreground">This is the beginning of {info.name}.</p>
+          <p className="py-4 text-center text-xs text-muted-foreground">
+            This is the beginning of {info.name}.
+          </p>
         )}
         {messagesQ.isPending && (
           <div className="space-y-4 py-4">
@@ -296,7 +305,9 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
           type="button"
           onClick={() => scrollToBottom(true)}
           className="fixed left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg"
-          style={{ bottom: `calc(${keyboardOpen ? '0px' : 'var(--tabbar-height)'} + env(safe-area-inset-bottom, 0px) + 5.5rem)` }}
+          style={{
+            bottom: `calc(${keyboardOpen ? '0px' : 'var(--tabbar-height)'} + env(safe-area-inset-bottom, 0px) + 5.5rem)`,
+          }}
         >
           <ArrowDown className="size-4" aria-hidden="true" />
           {unseen} new {unseen === 1 ? 'message' : 'messages'}
@@ -381,13 +392,20 @@ const MessageRow = memo(function MessageRow({
       id={`msg-${m.id}`}
       className={cn('flex gap-2', mine ? 'justify-end' : 'justify-start', first ? 'mt-3' : 'mt-0.5')}
     >
-      {!mine && (first ? <Avatar userId={m.user_id} name={authorName} className="mt-5" /> : <span className="w-8 shrink-0" />)}
+      {!mine &&
+        (first ? (
+          <Avatar userId={m.user_id} name={authorName} className="mt-5" />
+        ) : (
+          <span className="w-8 shrink-0" />
+        ))}
       <div className={cn('flex min-w-0 max-w-[80%] flex-col', mine ? 'items-end' : 'items-start')}>
         {!mine && first && (
           <p className="mb-0.5 flex items-center gap-1.5 px-1 text-xs font-medium text-muted-foreground">
             {authorName}
             {authorIsModerator && (
-              <span className="rounded bg-primary/10 px-1 py-px text-[10px] font-semibold text-primary">Moderator</span>
+              <span className="rounded bg-primary/10 px-1 py-px text-[10px] font-semibold text-primary">
+                Moderator
+              </span>
             )}
           </p>
         )}
@@ -409,7 +427,9 @@ const MessageRow = memo(function MessageRow({
               pending && 'opacity-60',
             )}
           >
-            {m.reply_to && !deleted && <ReplyQuote id={m.reply_to} known={reply} nameOf={nameOf} blocked={blocked} mine={mine} />}
+            {m.reply_to && !deleted && (
+              <ReplyQuote id={m.reply_to} known={reply} nameOf={nameOf} blocked={blocked} mine={mine} />
+            )}
             <span className="block whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
               {deleted ? deletedText : m.body}
             </span>
@@ -464,7 +484,9 @@ function ReplyQuote({
     <span
       className={cn(
         'mb-1.5 block border-l-2 pl-2 text-xs',
-        mine ? 'border-primary-foreground/50 text-primary-foreground/85' : 'border-primary/50 text-muted-foreground',
+        mine
+          ? 'border-primary-foreground/50 text-primary-foreground/85'
+          : 'border-primary/50 text-muted-foreground',
       )}
     >
       {original && !blocked.has(original.user_id) && (

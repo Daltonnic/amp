@@ -131,6 +131,8 @@ export default defineConfig(({ mode }) => {
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/functions\//, /^\/auth\//, /^\/rest\//],
           cleanupOutdatedCaches: true,
+          // Push notification handlers (public/push-sw.js).
+          importScripts: ['push-sw.js'],
           // Personal data (check-ins, journal, etc.) is never cached by the
           // service worker: Supabase requests go straight to the network.
           runtimeCaching: [],

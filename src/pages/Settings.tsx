@@ -38,9 +38,18 @@ import { backend } from '@/data'
 import { useDeleteProfile, useProfile, useUpdateProfile } from '@/data/queries'
 import type { Gender, Profile } from '@/data/types'
 import { trackLabel } from '@/lib/audience'
+import { usePush } from '@/data/pushQueries'
+import type { PushState } from '@/lib/push'
 import { NameFields, namePartsOf, profileNamePatch } from '@/components/NameFields'
 import { GROUP_ROOMS, roomFor } from '@/content/group'
-import { useBlockMember, useGroupBlocks, useGroupMembers, useGroupStatus, useLeaveGroup, useMyRoom } from '@/data/groupQueries'
+import {
+  useBlockMember,
+  useGroupBlocks,
+  useGroupMembers,
+  useGroupStatus,
+  useLeaveGroup,
+  useMyRoom,
+} from '@/data/groupQueries'
 import {
   biometryInfo,
   clearLock,
@@ -52,7 +61,7 @@ import {
 } from '@/lib/appLock'
 import { useAuth } from '@/lib/auth'
 import { config, isCloudConfigured } from '@/lib/config'
-import { hapticSuccess } from '@/lib/native'
+import { hapticSuccess, isNative } from '@/lib/native'
 import { clearReminders, remindersSupported, syncReminders } from '@/lib/reminders'
 import { useTheme, type ThemePreference } from '@/lib/theme'
 import { errorMessage } from '@/lib/utils'
@@ -72,7 +81,8 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
   const [reminders, setReminders] = useState(p.daily_reminders)
   const [reminderTime, setReminderTime] = useState(p.reminder_time.slice(0, 5))
 
-  const nameChanged = JSON.stringify(profileNamePatch(name)) !== JSON.stringify(profileNamePatch(namePartsOf(p)))
+  const nameChanged =
+    JSON.stringify(profileNamePatch(name)) !== JSON.stringify(profileNamePatch(namePartsOf(p)))
   const currentRoom = useMyRoom()
   const groupStatus = useGroupStatus(currentRoom)
   const inGroup = Boolean(groupStatus.data?.member)
@@ -144,6 +154,7 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
       </Section>
 
       <Section title="Notifications">
+        <PushSettings />
         <Row title="Daily Reminders" subtitle="Gentle nudges to check in">
           <Switch checked={reminders} onCheckedChange={setReminders} aria-label="Daily reminders" />
         </Row>
@@ -206,6 +217,74 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
   )
 }
 
+/** Push notifications for this device: on/off, and whether to show message text. */
+function PushSettings() {
+  const push = usePush()
+  const toggle = (on: boolean) => {
+    const done = {
+      onSuccess: (state?: PushState) => {
+        if (state === 'blocked')
+          toast.error('Notifications are blocked for AMP. Allow them in your settings first.')
+        else hapticSuccess()
+      },
+      onError: (err: unknown) => toast.error(errorMessage(err)),
+    }
+    if (on) push.enable.mutate(undefined, done)
+    else push.disable.mutate(undefined, { ...done, onSuccess: () => done.onSuccess() })
+  }
+
+  if (push.support === 'ios-browser') {
+    return (
+      <Row
+        title="Push notifications"
+        subtitle="On iPhone and iPad, first add AMP to your Home Screen (tap Share, then Add to Home Screen), then open AMP from there and turn this on."
+      />
+    )
+  }
+  if (!push.available) {
+    return <Row title="Push notifications" subtitle="Not available in this browser or version of the app." />
+  }
+
+  const on = push.state === 'on'
+  return (
+    <>
+      <Row title="Push notifications" subtitle="New messages in your group, even when AMP is closed">
+        <Switch
+          checked={on}
+          disabled={push.busy || push.state === undefined || push.state === 'blocked'}
+          onCheckedChange={toggle}
+          aria-label="Push notifications"
+        />
+      </Row>
+      {push.state === 'blocked' && (
+        <p className="-mt-2 text-xs text-destructive">
+          Notifications are blocked for AMP on this device. Allow them in your{' '}
+          {isNative ? 'phone' : 'browser'} settings, then come back here.
+        </p>
+      )}
+      {on && (
+        <Row
+          title="Show message text"
+          subtitle={
+            push.preview
+              ? 'Notifications show the group, name and message.'
+              : 'Off for privacy: notifications just say “New message in your group”.'
+          }
+        >
+          <Switch
+            checked={push.preview}
+            disabled={push.changePreview.isPending}
+            onCheckedChange={(show) =>
+              push.changePreview.mutate(show, { onError: (err) => toast.error(errorMessage(err)) })
+            }
+            aria-label="Show message text in notifications"
+          />
+        </Row>
+      )}
+    </>
+  )
+}
+
 function GroupSection({ room }: { room: NonNullable<ReturnType<typeof useMyRoom>> }) {
   const members = useGroupMembers(room, true)
   const blocks = useGroupBlocks(true)
@@ -231,7 +310,10 @@ function GroupSection({ room }: { room: NonNullable<ReturnType<typeof useMyRoom>
                   variant="ghost"
                   size="sm"
                   onClick={() =>
-                    block.mutate({ userId: id, block: false }, { onError: (err) => toast.error(errorMessage(err)) })
+                    block.mutate(
+                      { userId: id, block: false },
+                      { onError: (err) => toast.error(errorMessage(err)) },
+                    )
                   }
                 >
                   Unblock
@@ -243,7 +325,9 @@ function GroupSection({ room }: { room: NonNullable<ReturnType<typeof useMyRoom>
       </div>
       {confirmLeave ? (
         <div className="space-y-3 rounded-lg border p-3">
-          <p className="text-sm text-foreground">Leave the group? You can join again any time from the Group tab.</p>
+          <p className="text-sm text-foreground">
+            Leave the group? You can join again any time from the Group tab.
+          </p>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setConfirmLeave(false)}>
               Cancel
@@ -289,9 +373,9 @@ function Row({ title, subtitle, children }: { title: string; subtitle?: string; 
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
         <p className="text-sm text-foreground">{title}</p>
-        {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{subtitle}</p>}
       </div>
-      {children}
+      {children && <div className="shrink-0">{children}</div>}
     </div>
   )
 }

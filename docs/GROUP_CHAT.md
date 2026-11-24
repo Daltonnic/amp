@@ -16,7 +16,9 @@ leave their old group automatically and can join the new one.
 
 It works the same in the iPhone and Android apps and in any web browser
 (phone or computer). New messages arrive live while the app is open, and the
-Group tab shows an unread count.
+Group tab shows an unread count. When AMP is closed, people who turned on
+notifications get a push notification (see
+[PUSH_NOTIFICATIONS.md](PUSH_NOTIFICATIONS.md)).
 
 ## What members can do
 
@@ -105,7 +107,4 @@ group.
 
 ## Not included yet
 
-- **Push notifications** for new messages when the app is closed. This needs
-  Apple Push Notification and Firebase credentials for the store apps, and Web
-  Push for the PWA. The unread badge covers the app while it's open.
 - Editing a sent message (delete and resend instead).

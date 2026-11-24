@@ -18,6 +18,7 @@ import {
 import { paths } from '@/app/routes'
 import { AboutYouPrompt } from '@/components/AboutYouPrompt'
 import { InstallPrompt } from '@/components/InstallPrompt'
+import { NotificationsPrompt } from '@/components/NotificationsPrompt'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { WeeklyChart, type ChartSeries } from '@/components/WeeklyChart'
 import { Card } from '@/components/ui/card'
@@ -65,6 +66,7 @@ export default function Home() {
           <h1 className="mt-0.5 font-display text-2xl font-semibold text-foreground">The Journey</h1>
         </header>
         {!profile.data.gender && <AboutYouPrompt profileId={profile.data.id} />}
+        <NotificationsPrompt />
         <InstallPrompt />
         <Encouragement track={track} />
         <QuickActions />

@@ -55,3 +55,7 @@ verify_jwt = false
 
 [functions.delete-account]
 verify_jwt = false
+
+# Called by the database (chat_messages_push trigger) with a shared secret.
+[functions.notify-group]
+verify_jwt = false

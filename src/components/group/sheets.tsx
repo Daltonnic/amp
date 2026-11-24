@@ -203,9 +203,14 @@ export function MessageActionsSheet({
             }}
           >
             <fieldset className="space-y-2">
-              <legend className="mb-1 text-sm font-medium text-foreground">Why are you reporting this?</legend>
+              <legend className="mb-1 text-sm font-medium text-foreground">
+                Why are you reporting this?
+              </legend>
               {REPORT_REASONS.map((r) => (
-                <label key={r} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3">
+                <label
+                  key={r}
+                  className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3"
+                >
                   <input
                     type="radio"
                     name="report-reason"
@@ -226,8 +231,8 @@ export function MessageActionsSheet({
               className="min-h-20 resize-none"
             />
             <p className="text-xs text-muted-foreground">
-              {author} won’t know who reported it. Messages reported by three people are hidden until a moderator
-              reviews them.
+              {author} won’t know who reported it. Messages reported by three people are hidden until a
+              moderator reviews them.
             </p>
             <div className="flex gap-2">
               <Button type="button" variant="outline" className="flex-1" onClick={() => setMode('menu')}>
@@ -436,7 +441,9 @@ export function MembersSheet({
                       {isMe && <Badge variant="secondary">You</Badge>}
                       {m.role === 'moderator' && <Badge>Moderator</Badge>}
                     </p>
-                    <p className="text-xs text-muted-foreground">Joined {format(new Date(m.joined_at), 'MMM yyyy')}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Joined {format(new Date(m.joined_at), 'MMM yyyy')}
+                    </p>
                   </div>
                   {!isMe && (
                     <div className="flex shrink-0 gap-1">
@@ -453,7 +460,12 @@ export function MembersSheet({
                         {isBlocked ? 'Unblock' : 'Block'}
                       </Button>
                       {isModerator && m.role !== 'moderator' && (
-                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setRemoving(m)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive"
+                          onClick={() => setRemoving(m)}
+                        >
                           Remove
                         </Button>
                       )}
@@ -524,7 +536,9 @@ export function ReportsSheet({
           Messages members have reported. Reporters stay anonymous.
         </DialogDescription>
         {groups.size === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">No open reports. Thank you for keeping watch.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No open reports. Thank you for keeping watch.
+          </p>
         ) : (
           <ul className="space-y-3 py-3">
             {[...groups.values()].map((list) => {
@@ -536,7 +550,9 @@ export function ReportsSheet({
                     <p className="text-xs font-medium text-muted-foreground">
                       {author} · reported {list.length} {list.length === 1 ? 'time' : 'times'}
                     </p>
-                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">{first.body_snapshot}</p>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">
+                      {first.body_snapshot}
+                    </p>
                   </div>
                   <ul className="space-y-1 text-xs text-muted-foreground">
                     {list.map((r) => (

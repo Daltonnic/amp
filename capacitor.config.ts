@@ -44,6 +44,10 @@ const config: CapacitorConfig = {
       resize: 'native',
       resizeOnFullScreen: true,
     },
+    PushNotifications: {
+      // Show group notifications as banners even while AMP is open.
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
     LocalNotifications: {
       smallIcon: 'ic_stat_amp',
       iconColor: '#d4632a',

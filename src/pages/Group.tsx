@@ -16,7 +16,11 @@ export default function Group() {
 
   if (profile.isPending || (room && status.isPending)) {
     return (
-      <div className="flex min-h-[60dvh] items-center justify-center" role="status" aria-label="Loading your group">
+      <div
+        className="flex min-h-[60dvh] items-center justify-center"
+        role="status"
+        aria-label="Loading your group"
+      >
         <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
       </div>
     )
@@ -53,10 +57,12 @@ export default function Group() {
       <div className="mx-auto w-full max-w-lg px-5 pb-6 pt-6">
         <Card className="flex flex-col items-center gap-3 p-8 text-center">
           <ShieldOff className="size-8 text-muted-foreground" aria-hidden="true" />
-          <h1 className="font-display text-lg font-semibold">You've been removed from {GROUP_ROOMS[room].name}</h1>
+          <h1 className="font-display text-lg font-semibold">
+            You've been removed from {GROUP_ROOMS[room].name}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            A moderator removed you from this group. Everything else in the app still works. If you think
-            this was a mistake, talk with your pastor or accountability partner.
+            A moderator removed you from this group. Everything else in the app still works. If you think this
+            was a mistake, talk with your pastor or accountability partner.
           </p>
         </Card>
       </div>

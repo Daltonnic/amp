@@ -28,7 +28,9 @@ describe('group thread', () => {
       ],
       now,
     )
-    const shape = items.map((i) => (i.type === 'message' ? `${i.message.id}:${i.first ? 'F' : ''}${i.last ? 'L' : ''}` : i.type))
+    const shape = items.map((i) =>
+      i.type === 'message' ? `${i.message.id}:${i.first ? 'F' : ''}${i.last ? 'L' : ''}` : i.type,
+    )
     expect(shape).toEqual(['day', '1:F', '2:L', '3:FL', '4:FL'])
   })
 

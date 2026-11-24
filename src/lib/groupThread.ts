@@ -25,7 +25,11 @@ export function buildThread(messages: GroupMessage[], now = new Date()): ThreadI
   for (const message of messages) {
     const at = new Date(message.created_at)
     if (!prev || !isSameDay(new Date(prev.created_at), at)) {
-      items.push({ type: 'day', key: `day-${message.created_at.slice(0, 10)}-${message.id}`, label: dayLabel(at, now) })
+      items.push({
+        type: 'day',
+        key: `day-${message.created_at.slice(0, 10)}-${message.id}`,
+        label: dayLabel(at, now),
+      })
       prev = null
     }
     if (message.kind === 'system') {

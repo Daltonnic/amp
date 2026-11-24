@@ -4,6 +4,7 @@ import { AuthError } from '@supabase/supabase-js'
 import { DEVICE_USER_ID } from '@/data/deviceBackend'
 import { config, isCloudConfigured } from './config'
 import { isNative } from './native'
+import { forgetDeviceOnSignOut } from './push'
 import { getSupabase } from './supabase'
 
 export type AuthState =
@@ -126,6 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     if (!isCloudConfigured) return
+    // Stop this device getting the account's notifications before signing out.
+    await forgetDeviceOnSignOut()
     await getSupabase().auth.signOut()
     queryClient.clear()
   }, [queryClient])
