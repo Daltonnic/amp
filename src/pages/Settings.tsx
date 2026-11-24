@@ -39,7 +39,7 @@ import { useDeleteProfile, useProfile, useUpdateProfile } from '@/data/queries'
 import type { Gender, Profile } from '@/data/types'
 import { trackLabel } from '@/lib/audience'
 import { usePush } from '@/data/pushQueries'
-import type { PushState } from '@/lib/push'
+import { requestPushPermission, type PushState } from '@/lib/push'
 import { NameFields, namePartsOf, profileNamePatch } from '@/components/NameFields'
 import { GROUP_ROOMS, roomFor } from '@/content/group'
 import {
@@ -229,7 +229,7 @@ function PushSettings() {
       },
       onError: (err: unknown) => toast.error(errorMessage(err)),
     }
-    if (on) push.enable.mutate(undefined, done)
+    if (on) push.enable.mutate(requestPushPermission(), done)
     else push.disable.mutate(undefined, { ...done, onSuccess: () => done.onSuccess() })
   }
 

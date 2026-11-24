@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { usePush } from '@/data/pushQueries'
+import { requestPushPermission } from '@/lib/push'
 import { hapticSuccess } from '@/lib/native'
 import { errorMessage } from '@/lib/utils'
 
@@ -33,7 +34,7 @@ export function NotificationsPrompt() {
   }
 
   const turnOn = () =>
-    push.enable.mutate(undefined, {
+    push.enable.mutate(requestPushPermission(), {
       onSuccess: (state) => {
         if (state === 'on') {
           hapticSuccess()

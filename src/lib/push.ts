@@ -184,7 +184,20 @@ function nativeToken(): Promise<string> {
 }
 
 /** Asks for permission (if needed) and turns on notifications for this device. */
-export async function enablePush(showPreview = false): Promise<PushState> {
+/**
+ * Starts the browser's "Allow notifications?" prompt. Call it directly in the
+ * tap handler, before anything async: iPhone Home Screen apps only show the
+ * prompt during the tap itself. Pass the result to enablePush().
+ */
+export function requestPushPermission(): Promise<NotificationPermission> | undefined {
+  if (fake() || pushSupport() !== 'web') return undefined
+  return Notification.requestPermission()
+}
+
+export async function enablePush(
+  showPreview = false,
+  permissionRequest?: Promise<NotificationPermission>,
+): Promise<PushState> {
   const f = fake()
   if (f) {
     if (f.permission === 'default') f.permission = 'granted'
@@ -197,7 +210,7 @@ export async function enablePush(showPreview = false): Promise<PushState> {
   const support = pushSupport()
 
   if (support === 'web') {
-    const permission = await Notification.requestPermission()
+    const permission = await (permissionRequest ?? Notification.requestPermission())
     if (permission !== 'granted') return permission === 'denied' ? 'blocked' : 'off'
     const reg = await serviceWorker()
     const options = { userVisibleOnly: true, applicationServerKey: keyBytes(config.vapidPublicKey) }

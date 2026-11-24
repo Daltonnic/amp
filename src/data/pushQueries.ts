@@ -35,7 +35,9 @@ export function usePush() {
   })
 
   const enable = useMutation({
-    mutationFn: () => enablePush(preview.data ?? false),
+    /** Pass requestPushPermission(), called during the tap. */
+    mutationFn: (permission?: Promise<NotificationPermission>) =>
+      enablePush(preview.data ?? false, permission),
     onSuccess: (s: PushState) => qc.setQueryData(pushKeys.state(me), s),
   })
   const disable = useMutation({
