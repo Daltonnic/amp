@@ -321,16 +321,13 @@ export function FreedomBadge({ profile }: { profile: Profile }) {
           ? 'Day 1 of freedom. Show freedom counter'
           : `${days} days of freedom. Show freedom counter`
       }
-      className="flex min-w-[5.5rem] shrink-0 flex-col items-center rounded-xl border border-primary/20 bg-card/90 px-3 py-2 text-center shadow-xs transition-colors hover:bg-primary/5 active:scale-[0.98]"
+      // A slim pill; the invisible ::after keeps a comfortable tap area.
+      className="relative mt-1 inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-primary/20 bg-card/90 py-1 pl-2 pr-2.5 text-xs shadow-xs transition-colors after:absolute after:-inset-2 after:content-[''] hover:bg-primary/5 active:scale-[0.98]"
     >
-      <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
-        <Flame className="size-3" aria-hidden="true" /> Freedom
-      </span>
-      <span className="mt-0.5 font-display text-2xl font-semibold leading-none text-foreground">
-        {days === 0 ? 'Day 1' : days}
-      </span>
-      <span className="mt-0.5 text-[10px] leading-tight text-muted-foreground">
-        {days === 1 ? 'Day of Freedom' : 'Days of Freedom'}
+      <Flame className="size-3.5 text-primary" aria-hidden="true" />
+      <span className="font-semibold text-foreground">{days === 0 ? 'Day 1' : days}</span>
+      <span className="text-muted-foreground">
+        {days === 0 ? 'of Freedom' : days === 1 ? 'Day of Freedom' : 'Days of Freedom'}
       </span>
     </a>
   )
