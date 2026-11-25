@@ -66,6 +66,34 @@ describe('group thread', () => {
   })
 })
 
+describe('day dividers and notices', () => {
+  const now = new Date('2026-11-24T18:00:00')
+
+  it('shows each day once, even around notices and milestones', () => {
+    const items = buildThread(
+      [
+        msg('1', 'a', '2026-11-24T09:00:00'),
+        msg('2', 'b', '2026-11-24T09:05:00', 'system'),
+        { ...msg('3', 'a', '2026-11-24T09:10:00'), kind: 'milestone' as const, milestone_days: 30 },
+        msg('4', 'a', '2026-11-24T09:12:00'),
+        msg('5', 'a', '2026-11-25T08:00:00'),
+      ],
+      now,
+    )
+    expect(items.map((i) => i.type)).toEqual([
+      'day',
+      'message',
+      'system',
+      'milestone',
+      'message',
+      'day',
+      'message',
+    ])
+    // A milestone breaks a run: the next message shows its author again.
+    expect(items[4]).toMatchObject({ type: 'message', first: true })
+  })
+})
+
 describe('catching up on missed messages', () => {
   const at = (minute: number) => `2026-11-24T09:${String(minute).padStart(2, '0')}:00Z`
   // Pages are newest first, like the thread's loaded pages.

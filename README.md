@@ -40,6 +40,7 @@ Old Base44 links (`/CheckIn`, `/TriggerAwareness`, `/IdentityFormation`, `/Onboa
 ### Fixed and improved along the way
 
 - **App lock actually works.** Base44 saved the PIN in plain text in the database and never asked for it. Now the PIN is hashed on-device (PBKDF2) and locks the app at launch and after 30 s in the background, with Face ID / Touch ID / fingerprint on phones.
+- **Milestones are celebrated**: a pop-up on Home for each freedom milestone, with an optional share to the group that members can celebrate ([docs/GROUP_CHAT.md](docs/GROUP_CHAT.md)).
 - **Daily check-in reminders are real**, at a time you choose, only on days you haven't checked in: scheduled on the phone in the native apps, sent as push notifications everywhere else ([docs/PUSH_NOTIFICATIONS.md](docs/PUSH_NOTIFICATIONS.md)).
 - **Dates are local.** Base44 stored check-ins by UTC date, so evening check-ins in the U.S. landed on tomorrow.
 - **Account deletion deletes the account**, not just the rows (App Store requirement).

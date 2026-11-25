@@ -36,6 +36,26 @@ notifications get a push notification (see
   on every device. They aren't told. Unblock in Settings → Group.
 - Leave the group (Group tab → tap the group name, or Settings → Group).
 
+## Milestone celebrations
+
+People in recovery have a freedom counter. When they reach a milestone (1, 3,
+7, 14, 21, 30, 60, 90, 120, 180 and 270 days, then every year), Home
+celebrates it once with a pop-up, a verse and a little confetti. If they
+didn't open AMP that day, it celebrates the next time they do. From there they
+can **share it with their group** or **keep it private**. For a week, the
+freedom card also offers to share it.
+
+A shared milestone shows in the group as a celebration card ("Sam M. reached
+30 days of freedom!"). Members tap **Celebrate** (a like) or **Encourage** (a
+reply); the person sees how many are celebrating with them. The group gets a
+notification like any message ("🎉 Sam M. reached 30 days of freedom.
+Celebrate with them!" with details on, "New message in your group" without).
+
+The server checks each share: it must be a real milestone the person has
+reached from their own start date, and each milestone is shared once per
+stretch (`public.chat_share_milestone()`). Starting again starts the
+milestones over. Nobody can post a milestone card any other way.
+
 ## How names show
 
 Settings → Profile (and the join screen) let each person choose how others see

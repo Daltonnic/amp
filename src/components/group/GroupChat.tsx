@@ -11,7 +11,18 @@ import {
 } from 'react'
 import { format } from 'date-fns'
 import { Link } from 'react-router'
-import { ArrowDown, ArrowUp, CalendarDays, Flag, Heart, Loader2, Users, X } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  CalendarDays,
+  Flag,
+  Flame,
+  Heart,
+  Loader2,
+  MessageCircle,
+  Users,
+  X,
+} from 'lucide-react'
 import { paths } from '@/app/routes'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -300,6 +311,19 @@ export function GroupChat({ room, member }: { room: GroupRoomId; member: GroupMe
               </p>
             )
           }
+          if (item.type === 'milestone') {
+            return (
+              <MilestoneCard
+                key={item.key}
+                message={item.message}
+                me={me}
+                authorName={nameOf(item.message.user_id)}
+                onOpen={setSelected}
+                onCelebrate={onLike}
+                onEncourage={startReply}
+              />
+            )
+          }
           const m = item.message
           const author = members.get(m.user_id)
           return (
@@ -527,6 +551,80 @@ function ReplyQuote({
       )}
       <span className="line-clamp-2 block">{text}</span>
     </span>
+  )
+}
+
+/** A shared freedom milestone: the group celebrates (likes) and encourages (replies). */
+function MilestoneCard({
+  message: m,
+  me,
+  authorName,
+  onOpen,
+  onCelebrate,
+  onEncourage,
+}: {
+  message: GroupMessage
+  me: string
+  authorName: string
+  onOpen: (m: GroupMessage) => void
+  onCelebrate: (id: string) => void
+  onEncourage: (m: GroupMessage) => void
+}) {
+  if (m.deleted_at) {
+    return (
+      <p className="my-2 text-center text-xs italic text-muted-foreground">
+        A milestone celebration was removed.
+      </p>
+    )
+  }
+  const mine = m.user_id === me
+  const celebrating = m.liked_by.includes(me)
+  const count = m.liked_by.length
+  const who = mine ? 'You' : authorName
+  return (
+    <div className="my-3 flex justify-center px-1">
+      <div className="w-full max-w-sm rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-leader-soft p-4 text-center shadow-xs">
+        <button
+          type="button"
+          onClick={() => onOpen(m)}
+          aria-label={`${who} ${m.body}. Show options`}
+          className="block w-full rounded-xl"
+        >
+          <span className="mx-auto flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+            <Flame className="size-5" aria-hidden="true" />
+          </span>
+          <span className="mt-2 block font-display text-lg font-semibold leading-snug text-foreground">
+            {who} {m.body}!
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {format(new Date(m.created_at), 'h:mm a')}
+          </span>
+        </button>
+        {mine ? (
+          count > 0 && (
+            <p className="mt-3 text-sm font-medium text-primary">
+              🎉 {count === 1 ? '1 person is' : `${count} people are`} celebrating with you
+            </p>
+          )
+        ) : (
+          <div className="mt-3 flex justify-center gap-2">
+            <Button
+              size="sm"
+              variant={celebrating ? 'default' : 'outline'}
+              aria-pressed={celebrating}
+              onClick={() => onCelebrate(m.id)}
+              className="rounded-full"
+            >
+              🎉 {celebrating ? 'Celebrating' : 'Celebrate'}
+              {count > 0 && <span className="tabular-nums"> · {count}</span>}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => onEncourage(m)} className="rounded-full">
+              <MessageCircle aria-hidden="true" /> Encourage
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 

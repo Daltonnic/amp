@@ -49,8 +49,9 @@ export default function Privacy() {
             </li>
             <li>
               What you choose to record: daily check-ins, journal entries, trigger logs, which grounding tools
-              you use, and your freedom counter's start date (visible only to you unless you share a
-              milestone).
+              you use, and your freedom counter's start date and which milestones you've celebrated (visible
+              only to you). If you choose to share a milestone, your group sees the name you chose and the
+              milestone (for example, "reached 30 days of freedom"), never your start date.
             </li>
             <li>Accountability contacts you add (name, email, phone, relationship).</li>
             <li>

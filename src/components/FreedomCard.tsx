@@ -7,30 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { DialogDescription, DialogTitle, Sheet, SheetContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useGroupStatus, useMyRoom, useSendMessage } from '@/data/groupQueries'
+import { useGroupStatus, useMyRoom, useShareMilestone } from '@/data/groupQueries'
 import { useUpdateProfile } from '@/data/queries'
 import type { Profile } from '@/data/types'
 import { localDate } from '@/lib/dates'
-import {
-  daysOfFreedom,
-  durationLabel,
-  isMilestone,
-  milestoneShareText,
-  nextMilestone,
-  progressToNext,
-} from '@/lib/freedom'
+import { daysOfFreedom, durationLabel, nextMilestone, previousMilestone, progressToNext } from '@/lib/freedom'
 import { hapticSuccess } from '@/lib/native'
 import { errorMessage } from '@/lib/utils'
-
-const SHARED_KEY = 'amp.freedom.shared'
-
-function wasShared(key: string) {
-  try {
-    return localStorage.getItem(SHARED_KEY) === key
-  } catch {
-    return false
-  }
-}
 
 /**
  * Days of freedom, for the recovery track. Private: only the person sees it,
@@ -108,7 +91,6 @@ export function FreedomCard({ profile }: { profile: Profile }) {
 
   const days = daysOfFreedom(profile.freedom_start)
   const next = nextMilestone(days)
-  const celebrate = days > 0 && isMilestone(days)
   const best = Math.max(profile.freedom_best_days, days)
 
   return (
@@ -132,7 +114,7 @@ export function FreedomCard({ profile }: { profile: Profile }) {
         </div>
       </div>
 
-      {celebrate && <Celebration days={days} shareKey={`${profile.freedom_start}:${days}`} />}
+      <RecentMilestone profile={profile} days={days} />
 
       <div className="space-y-1.5">
         <div
@@ -195,49 +177,49 @@ function StartDateForm({
   )
 }
 
-/** A milestone today: celebrate, and offer to share it with the group. */
-function Celebration({ days, shareKey }: { days: number; shareKey: string }) {
+/**
+ * For a week after a milestone: a quiet note on the counter, with a second
+ * chance to share it (the celebration pop-up offers it first).
+ */
+function RecentMilestone({ profile, days }: { profile: Profile; days: number }) {
+  const reached = previousMilestone(days)
   const room = useMyRoom()
   const status = useGroupStatus(room)
-  const send = useSendMessage(room)
-  const [shared, setShared] = useState(() => wasShared(shareKey))
+  const share = useShareMilestone(room)
+  if (reached === 0 || days - reached >= 7) return null
   const inGroup = Boolean(status.data?.member)
+  const shared = profile.freedom_shared >= reached
 
   return (
     <div className="flex items-start gap-3 rounded-xl bg-primary/10 p-4">
       <PartyPopper className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
       <div className="min-w-0 flex-1 space-y-2">
-        <p className="text-sm font-semibold text-foreground">{durationLabel(days)} of freedom!</p>
-        <p className="text-xs text-muted-foreground">
-          Thank God for every one of them. This is worth celebrating.
+        <p className="text-sm font-semibold text-foreground">
+          {days === reached
+            ? `${durationLabel(reached)} of freedom today!`
+            : `You reached ${durationLabel(reached)}!`}
         </p>
-        {inGroup && !shared && (
+        {shared ? (
+          <p className="text-xs font-medium text-primary">Shared with your group.</p>
+        ) : inGroup ? (
           <Button
             size="sm"
-            disabled={send.isPending}
+            disabled={share.isPending}
             onClick={() =>
-              send.mutate(
-                { body: milestoneShareText(days), replyTo: null },
-                {
-                  onSuccess: () => {
-                    try {
-                      localStorage.setItem(SHARED_KEY, shareKey)
-                    } catch {
-                      /* ignore */
-                    }
-                    setShared(true)
-                    hapticSuccess()
-                    toast.success('Shared with your group.')
-                  },
-                  onError: (err) => toast.error(errorMessage(err)),
+              share.mutate(reached, {
+                onSuccess: () => {
+                  hapticSuccess()
+                  toast.success('Shared with your group.')
                 },
-              )
+                onError: (err) => toast.error(errorMessage(err)),
+              })
             }
           >
             Share with my group
           </Button>
+        ) : (
+          <p className="text-xs text-muted-foreground">Thank God for every one of them.</p>
         )}
-        {shared && <p className="text-xs font-medium text-primary">Shared with your group.</p>}
       </div>
     </div>
   )

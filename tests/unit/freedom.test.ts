@@ -3,7 +3,9 @@ import {
   daysOfFreedom,
   durationLabel,
   isMilestone,
-  milestoneShareText,
+  milestoneToCelebrate,
+  milestoneVerse,
+  MILESTONES,
   nextMilestone,
   previousMilestone,
   progressToNext,
@@ -35,6 +37,31 @@ describe('freedom counter', () => {
     expect(durationLabel(30)).toBe('30 days')
     expect(durationLabel(365)).toBe('1 year')
     expect(durationLabel(730)).toBe('2 years')
-    expect(milestoneShareText(30)).toBe('🎉 30 days of freedom today. Thank you for walking with me.')
+  })
+
+  it('celebrates each milestone once, even if the day itself was missed', () => {
+    const p = {
+      track: 'men' as const,
+      freedom_start: '2026-10-22',
+      freedom_hidden: false,
+      freedom_celebrated: 0,
+    }
+    // Day 34: 30 was reached on Nov 21 and not celebrated yet.
+    expect(milestoneToCelebrate(p, today)).toBe(30)
+    expect(milestoneToCelebrate({ ...p, freedom_celebrated: 30 }, today)).toBeNull()
+    // Celebrated 21 earlier; 30 is new.
+    expect(milestoneToCelebrate({ ...p, freedom_celebrated: 21 }, today)).toBe(30)
+    // Not on day 0, not for spouses, not when the counter is hidden or not started.
+    expect(milestoneToCelebrate({ ...p, freedom_start: '2026-11-25' }, today)).toBeNull()
+    expect(milestoneToCelebrate({ ...p, track: 'spouse' }, today)).toBeNull()
+    expect(milestoneToCelebrate({ ...p, freedom_hidden: true }, today)).toBeNull()
+    expect(milestoneToCelebrate({ ...p, freedom_start: null }, today)).toBeNull()
+    // Years.
+    expect(milestoneToCelebrate({ ...p, freedom_start: '2024-11-20' }, today)).toBe(730)
+  })
+
+  it('gives every milestone a verse', () => {
+    for (const m of [...MILESTONES, 730, 1095]) expect(milestoneVerse(m).ref).toBeTruthy()
+    expect(milestoneVerse(30)).toEqual(milestoneVerse(30))
   })
 })

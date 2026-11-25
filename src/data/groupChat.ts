@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { roomFor } from '@/content/group'
 import { isCloudConfigured } from '@/lib/config'
+import { daysOfFreedom, durationLabel, isMilestone } from '@/lib/freedom'
 import { publicName } from '@/lib/names'
 import { getSupabase } from '@/lib/supabase'
 import { DEVICE_USER_ID } from './deviceBackend'
@@ -35,6 +36,8 @@ export interface GroupChatApi {
   messages(room: GroupRoomId, opts: { before?: string; limit: number }): Promise<GroupMessage[]>
   message(id: string): Promise<GroupMessage | null>
   send(body: string, replyTo: string | null): Promise<GroupMessage>
+  /** Share a freedom milestone you've reached with your group (checked by the server). */
+  shareMilestone(days: number): Promise<GroupMessage>
   toggleLike(id: string): Promise<string[]>
   deleteMessage(id: string): Promise<void>
   markRead(): Promise<void>
@@ -141,6 +144,7 @@ export function createSupabaseGroupChat(sb: SupabaseClient): GroupChatApi {
     },
 
     send: (body, replyTo) => rpc<GroupMessage>('chat_send', { body, reply_to: replyTo }),
+    shareMilestone: (days) => rpc<GroupMessage>('chat_share_milestone', { days }),
     toggleLike: (id) => rpc<string[]>('chat_toggle_like', { message_id: id }),
     deleteMessage: (id) => rpc<void>('chat_delete_message', { message_id: id }),
     markRead: () => rpc<void>('chat_mark_read'),
@@ -150,7 +154,7 @@ export function createSupabaseGroupChat(sb: SupabaseClient): GroupChatApi {
         .from('chat_messages')
         .select('id', { count: 'exact', head: true })
         .eq('room', room)
-        .eq('kind', 'text')
+        .in('kind', ['text', 'milestone'])
         .is('deleted_at', null)
         .gt('created_at', since)
       if (exclude.length) q = q.not('user_id', 'in', `(${exclude.join(',')})`)
@@ -388,6 +392,52 @@ export function createDeviceGroupChat(): GroupChatApi {
       return message
     },
 
+    async shareMilestone(days) {
+      const room = activeRoom()
+      const profile = deviceProfile()
+      if (!profile || profile.track !== 'men' || !profile.freedom_start) {
+        throw new Error("There's no freedom counter to share.")
+      }
+      if (!isMilestone(days)) throw new Error("That isn't a milestone.")
+      if (daysOfFreedom(profile.freedom_start) + 1 < days)
+        throw new Error("That milestone hasn't been reached yet.")
+      const rows = load<GroupMessage>(KEY.messages)
+      if (
+        rows.some(
+          (m) => m.kind === 'milestone' && m.user_id === me && m.milestone_days === days && !m.deleted_at,
+        )
+      ) {
+        throw new Error('You already shared this milestone.')
+      }
+      const message: GroupMessage = {
+        id: crypto.randomUUID(),
+        room,
+        user_id: me,
+        kind: 'milestone',
+        body: `reached ${durationLabel(days)} of freedom`,
+        milestone_days: days,
+        reply_to: null,
+        liked_by: [],
+        created_at: now(),
+        deleted_at: null,
+        deleted_by: null,
+      }
+      save(KEY.messages, [...rows, message])
+      save(
+        'amp.device.profiles',
+        load<Profile>('amp.device.profiles').map((p) =>
+          p.user_id === me
+            ? {
+                ...p,
+                freedom_shared: Math.max(p.freedom_shared ?? 0, days),
+                freedom_celebrated: Math.max(p.freedom_celebrated ?? 0, days),
+              }
+            : p,
+        ),
+      )
+      return message
+    },
+
     async toggleLike(id) {
       activeRoom()
       return updateMessage(id, (m) => ({
@@ -415,7 +465,7 @@ export function createDeviceGroupChat(): GroupChatApi {
       return load<GroupMessage>(KEY.messages).filter(
         (m) =>
           m.room === room &&
-          m.kind === 'text' &&
+          (m.kind === 'text' || m.kind === 'milestone') &&
           !m.deleted_at &&
           m.created_at > since &&
           !exclude.includes(m.user_id),

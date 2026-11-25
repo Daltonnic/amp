@@ -53,6 +53,8 @@ function deviceTable<K extends TableName>(name: K): TableApi<Tables[K]> {
               freedom_start: null,
               freedom_best_days: 0,
               freedom_hidden: false,
+              freedom_celebrated: 0,
+              freedom_shared: 0,
               timezone: null,
               ...(r as object),
             }) as Row,

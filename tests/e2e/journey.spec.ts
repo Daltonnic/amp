@@ -659,9 +659,15 @@ test('freedom counter: start on Home; restart and edit in Settings', async ({ pa
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByText(/30 days of freedom · since/)).toBeVisible()
 
-  // Home celebrates the milestone; the small badge shows the count too.
+  // Home celebrates the milestone once (not in a group, so nothing to share);
+  // the counter notes it and the small badge shows the count too.
   await page.goto('/home')
-  await expect(page.getByText('30 days of freedom!')).toBeVisible()
+  const celebration = page.getByRole('dialog', { name: '30 days of freedom!' })
+  await expect(celebration).toBeVisible()
+  await expect(celebration.getByRole('button', { name: /^Share with/ })).toHaveCount(0)
+  await celebration.getByRole('button', { name: 'Thank you, Lord' }).click()
+  await expect(celebration).toBeHidden()
+  await expect(page.locator('#freedom').getByText('30 days of freedom today!')).toBeVisible()
   await expect(page.getByText(/30 days to 60 days/)).toBeVisible()
   const badge = page.getByRole('link', { name: '30 days of freedom. Show freedom counter' })
   await expect(badge).toBeVisible()
@@ -1055,6 +1061,95 @@ test('daily check-in reminders: chosen at sign-up, sent as push notifications', 
   await expect(page.getByText('Settings saved.')).toBeVisible()
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('amp.device.profiles') ?? '[]')[0])
   expect(saved.reminder_time.slice(0, 5)).toBe('21:15')
+  expect(errors).toEqual([])
+})
+
+test('milestones: celebrated once, shared with the group, celebrated by others', async ({ page }) => {
+  const errors = watchErrors(page)
+  await onboard(page, 'men', 'man')
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Group' }).click()
+  await page.getByRole('checkbox', { name: 'I agree to follow these guidelines' }).check()
+  await page.getByRole('button', { name: 'Join the group' }).click()
+  await expect(page.getByRole('textbox', { name: 'Message the group' })).toBeVisible()
+
+  // Freedom started 33 days ago; day 30 came and went without opening AMP.
+  const setStart = (daysAgo: number) =>
+    page.evaluate((n) => {
+      const d = new Date()
+      d.setDate(d.getDate() - n)
+      const pad = (x: number) => String(x).padStart(2, '0')
+      const rows = JSON.parse(localStorage.getItem('amp.device.profiles') ?? '[]')
+      rows[0].freedom_start = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+      localStorage.setItem('amp.device.profiles', JSON.stringify(rows))
+    }, daysAgo)
+  await setStart(33)
+  await page.goto('/home')
+
+  const dialog = page.getByRole('dialog', { name: '30 days of freedom!' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByText('Every one of these days is a gift from God.')).toBeVisible()
+  await expect(dialog.getByText('Your group will see: “Sam reached 30 days of freedom.”')).toBeVisible()
+  await dialog.getByRole('button', { name: 'Share with Men in Recovery' }).click()
+  await expect(page.getByText('Shared with your group. They’ll be cheering you on.')).toBeVisible()
+  await expect(dialog).toBeHidden()
+
+  // Only once. The counter remembers it was shared.
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'The Journey' })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.locator('#freedom').getByText('You reached 30 days!')).toBeVisible()
+  await expect(page.locator('#freedom').getByText('Shared with your group.')).toBeVisible()
+
+  // In the group: a celebration card. Someone else's milestone can be celebrated and encouraged.
+  await page.evaluate(() => {
+    const members = JSON.parse(localStorage.getItem('amp.device.group_members') ?? '[]')
+    const room = members[0].room
+    members.push({ ...members[0], user_id: 'mark', display_name: 'Mark T.' })
+    localStorage.setItem('amp.device.group_members', JSON.stringify(members))
+    const messages = JSON.parse(localStorage.getItem('amp.device.group_messages') ?? '[]')
+    messages.push({
+      id: 'm-mark',
+      room,
+      user_id: 'mark',
+      kind: 'milestone',
+      body: 'reached 7 days of freedom',
+      milestone_days: 7,
+      reply_to: null,
+      liked_by: [],
+      created_at: new Date().toISOString(),
+      deleted_at: null,
+      deleted_by: null,
+    })
+    localStorage.setItem('amp.device.group_messages', JSON.stringify(messages))
+  })
+  await page.goto('/group')
+  const log = page.getByRole('log', { name: 'Men in Recovery messages' })
+  await expect(log.getByText('You reached 30 days of freedom!')).toBeVisible()
+  await expect(log.getByText('Mark T. reached 7 days of freedom!')).toBeVisible()
+  const celebrate = log.getByRole('button', { name: /^🎉 Celebrate/ })
+  await celebrate.click()
+  await expect(log.getByRole('button', { name: /^🎉 Celebrating · 1/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await log.getByRole('button', { name: 'Encourage' }).click()
+  await expect(page.getByText('Replying to Mark T.')).toBeVisible()
+  await expect(page.getByRole('textbox', { name: 'Message the group' })).toBeFocused()
+
+  // Day 61: kept private at first, then shared from the counter.
+  await setStart(61)
+  await page.goto('/home')
+  const sixty = page.getByRole('dialog', { name: '60 days of freedom!' })
+  await expect(sixty).toBeVisible()
+  await sixty.getByRole('button', { name: 'Keep it private' }).click()
+  await expect(sixty).toBeHidden()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'The Journey' })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await page.locator('#freedom').getByRole('button', { name: 'Share with my group' }).click()
+  await expect(page.locator('#freedom').getByText('Shared with your group.')).toBeVisible()
+  await page.goto('/group')
+  await expect(page.getByText('You reached 60 days of freedom!')).toBeVisible()
   expect(errors).toEqual([])
 })
 

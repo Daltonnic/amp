@@ -78,6 +78,8 @@ export default function Onboarding() {
         freedom_start: null,
         freedom_best_days: 0,
         freedom_hidden: false,
+        freedom_celebrated: 0,
+        freedom_shared: 0,
         daily_reminders: reminders,
         reminder_time: reminderTime,
         timezone: currentTimeZone(),

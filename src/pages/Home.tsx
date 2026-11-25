@@ -18,6 +18,7 @@ import { paths } from '@/app/routes'
 import { AboutYouPrompt } from '@/components/AboutYouPrompt'
 import { FreedomBadge, FreedomCard } from '@/components/FreedomCard'
 import { InstallPrompt } from '@/components/InstallPrompt'
+import { MilestoneCelebration } from '@/components/MilestoneCelebration'
 import { NextMeeting } from '@/components/NextMeeting'
 import { NotificationBell } from '@/components/NotificationBell'
 import { NotificationsPrompt } from '@/components/NotificationsPrompt'
@@ -77,6 +78,7 @@ export default function Home() {
           </div>
           <h1 className="mt-0.5 font-display text-2xl font-semibold text-foreground">The Journey</h1>
         </header>
+        <MilestoneCelebration profile={profile.data} />
         {!profile.data.gender && <AboutYouPrompt profileId={profile.data.id} />}
         <NotificationsPrompt />
         <InstallPrompt />

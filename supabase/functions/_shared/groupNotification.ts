@@ -12,6 +12,8 @@ export interface GroupNotificationInput {
   preview: boolean
   /** The message replies to one of the recipient's own messages. */
   replyToYou: boolean
+  /** A shared milestone; `body` is "reached 30 days of freedom". */
+  milestone?: boolean
 }
 
 export interface GroupNotification {
@@ -36,6 +38,15 @@ export function groupNotification(n: GroupNotificationInput): GroupNotification 
       tag: 'amp-group',
       discreet: true,
       stack: '{n} new messages in your group',
+    }
+  }
+  if (n.milestone) {
+    return {
+      title: n.roomName,
+      body: `🎉 ${n.authorName} ${n.body}. Celebrate with them!`,
+      url: '/group',
+      tag: `amp-group-${n.messageId}`,
+      discreet: false,
     }
   }
   const text = n.body.replace(/\s+/g, ' ').trim()

@@ -157,7 +157,9 @@ async function messagePosted(db: SupabaseClient, messageId: string) {
     .select('id, room, user_id, kind, body, reply_to, deleted_at')
     .eq('id', messageId)
     .maybeSingle()
-  if (!message || message.kind !== 'text' || message.deleted_at) return { sent: 0 }
+  if (!message || (message.kind !== 'text' && message.kind !== 'milestone') || message.deleted_at) {
+    return { sent: 0 }
+  }
 
   const [author, room, parent, recipients] = await Promise.all([
     db.from('chat_members').select('display_name').eq('user_id', message.user_id).maybeSingle(),
@@ -177,6 +179,7 @@ async function messagePosted(db: SupabaseClient, messageId: string) {
       body: message.body,
       preview: r.show_preview,
       replyToYou: parentAuthor === r.user_id,
+      milestone: message.kind === 'milestone',
     }),
   )
 }

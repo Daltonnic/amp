@@ -43,6 +43,19 @@ describe('group notification wording', () => {
     expect(n.tag).toBe('amp-group-m1')
   })
 
+  it('celebrates a shared milestone, still discreet without previews', () => {
+    const milestone = { ...base, body: 'reached 30 days of freedom', milestone: true }
+    expect(groupNotification({ ...milestone, preview: false })).toMatchObject({
+      title: 'AMP',
+      body: 'New message in your group',
+    })
+    expect(groupNotification({ ...milestone, preview: true })).toMatchObject({
+      title: 'Men in Recovery',
+      body: '🎉 Mark T. reached 30 days of freedom. Celebrate with them!',
+      url: '/group',
+    })
+  })
+
   it('shortens long messages', () => {
     const n = groupNotification({ ...base, preview: true, body: 'word '.repeat(100) })
     expect(n.body.length).toBeLessThanOrEqual('Mark T.: '.length + 140)

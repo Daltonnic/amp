@@ -11,7 +11,7 @@ import { roomFor } from '@/content/group'
 import { mergeLatest } from '@/lib/groupThread'
 import { useAuth } from '@/lib/auth'
 import { groupChat, type GroupStatus } from './groupChat'
-import { useProfile } from './queries'
+import { keys, useProfile } from './queries'
 import type { GroupMember, GroupMessage, GroupRoomId } from './types'
 
 export const MESSAGE_PAGE = 40
@@ -198,6 +198,18 @@ export function useMarkRead(room: GroupRoomId | null) {
       qc.setQueryData<GroupStatus>(groupKeys.status(room), (s) =>
         s?.member ? { ...s, member: { ...s.member, last_read_at: new Date().toISOString() } } : s,
       )
+    },
+  })
+}
+
+/** Share a freedom milestone with the group; the profile remembers it. */
+export function useShareMilestone(room: GroupRoomId | null) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (days: number) => groupChat.shareMilestone(days),
+    onSuccess: (message) => {
+      if (room) upsertMessage(qc, room, message)
+      void qc.invalidateQueries({ queryKey: keys.profile })
     },
   })
 }

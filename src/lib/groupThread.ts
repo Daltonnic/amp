@@ -4,6 +4,7 @@ import type { GroupMessage } from '@/data/types'
 export type ThreadItem =
   | { type: 'day'; key: string; label: string }
   | { type: 'system'; key: string; message: GroupMessage }
+  | { type: 'milestone'; key: string; message: GroupMessage }
   | { type: 'message'; key: string; message: GroupMessage; first: boolean; last: boolean }
 
 /** Messages from one person this close together share one name and avatar. */
@@ -21,10 +22,13 @@ export function dayLabel(date: Date, now = new Date()): string {
  */
 export function buildThread(messages: GroupMessage[], now = new Date()): ThreadItem[] {
   const items: ThreadItem[] = []
+  /** The previous message in a run from one person (notices and milestones end a run). */
   let prev: GroupMessage | null = null
+  /** When the previous item of any kind was, for day dividers. */
+  let lastAt: Date | null = null
   for (const message of messages) {
     const at = new Date(message.created_at)
-    if (!prev || !isSameDay(new Date(prev.created_at), at)) {
+    if (!lastAt || !isSameDay(lastAt, at)) {
       items.push({
         type: 'day',
         key: `day-${message.created_at.slice(0, 10)}-${message.id}`,
@@ -32,8 +36,9 @@ export function buildThread(messages: GroupMessage[], now = new Date()): ThreadI
       })
       prev = null
     }
-    if (message.kind === 'system') {
-      items.push({ type: 'system', key: message.id, message })
+    lastAt = at
+    if (message.kind === 'system' || message.kind === 'milestone') {
+      items.push({ type: message.kind, key: message.id, message })
       prev = null
       continue
     }

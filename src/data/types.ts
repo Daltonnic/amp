@@ -30,6 +30,10 @@ export interface Profile {
   freedom_best_days: number
   /** Hide the freedom counter on Home. */
   freedom_hidden: boolean
+  /** The last milestone the app celebrated in this stretch (0 = none). */
+  freedom_celebrated: number
+  /** The last milestone shared with the group in this stretch (0 = none). */
+  freedom_shared: number
   daily_reminders: boolean
   /** "HH:MM" (Postgres returns "HH:MM:SS"; both are accepted). */
   reminder_time: string
@@ -203,9 +207,14 @@ export interface GroupMessage {
   id: string
   room: GroupRoomId
   user_id: string
-  /** "system" rows are "joined the group" style notices. */
-  kind: 'text' | 'system'
+  /**
+   * "system" rows are "joined the group" style notices; "milestone" rows are
+   * a shared freedom milestone (body: "reached 30 days of freedom").
+   */
+  kind: 'text' | 'system' | 'milestone'
   body: string
+  /** For milestones: how many days. */
+  milestone_days?: number | null
   reply_to: string | null
   liked_by: string[]
   created_at: string
