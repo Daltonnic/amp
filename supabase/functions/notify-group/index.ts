@@ -5,15 +5,18 @@
  * - someone asked to join a group → every leader;
  * - a leader approved a request → that person;
  * - a calendar reminder came due → people in that event's groups who want
- *   meeting notifications (public.calendar_push_recipients()).
+ *   meeting notifications (public.calendar_push_recipients());
+ * - daily check-in reminders came due → those people's web devices (the phone
+ *   apps schedule their own).
  *
- * Calendar reminders come from the every-minute scheduler
- * (public.calendar_send_due_reminders).
+ * Calendar and check-in reminders come from every-minute schedulers
+ * (public.calendar_send_due_reminders, public.checkin_send_due_reminders).
  *
  * Called by the database through pg_net (triggers chat_messages_push and
  * chat_members_push → public.push_webhook) with a shared secret. Body:
  * { message_id }, { event: 'join_request' | 'join_approved', user_id }, or
- * { event: 'calendar_reminder', event_id, starts_at, minutes }.
+ * { event: 'calendar_reminder', event_id, starts_at, minutes }, or
+ * { event: 'checkin_reminder', user_ids }.
  *
  * Secrets: PUSH_WEBHOOK_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
  * VAPID_SUBJECT. Optional, for the store apps: FCM_SERVICE_ACCOUNT (JSON) and
@@ -22,6 +25,7 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { adminClient, requireEnv } from '../_shared/http.ts'
 import {
+  checkinReminderNotification,
   eventReminderNotification,
   groupNotification,
   joinRequestNotification,
@@ -218,15 +222,39 @@ async function joinApproved(db: SupabaseClient, userId: string) {
   )
 }
 
-async function calendarReminder(db: SupabaseClient, eventId: string, startsAt: string | null, minutes: number) {
+async function calendarReminder(
+  db: SupabaseClient,
+  eventId: string,
+  startsAt: string | null,
+  minutes: number,
+) {
   const { data: event } = await db.from('calendar_events').select('id, title').eq('id', eventId).maybeSingle()
   if (!event) return { sent: 0 }
   // People who said they can't make it to this date aren't reminded.
-  const recipients = await db.rpc('calendar_push_recipients', { event_id: eventId, occurrence_start: startsAt })
+  const recipients = await db.rpc('calendar_push_recipients', {
+    event_id: eventId,
+    occurrence_start: startsAt,
+  })
   if (recipients.error) throw new Error(`calendar_push_recipients failed: ${recipients.error.message}`)
   return deliver(db, (recipients.data ?? []) as Recipient[], (r) =>
     eventReminderNotification({ eventId, title: event.title, minutes, preview: r.show_preview, startsAt }),
   )
+}
+
+async function checkinReminders(db: SupabaseClient, userIds: string[]) {
+  // In batches, to keep each request's list of ids short.
+  const subs: Recipient[] = []
+  for (let i = 0; i < userIds.length; i += 200) {
+    const { data, error } = await db
+      .from('push_subscriptions')
+      .select(SUBSCRIPTION_COLUMNS)
+      .eq('platform', 'web')
+      .in('user_id', userIds.slice(i, i + 200))
+    if (error) throw new Error(`push_subscriptions failed: ${error.message}`)
+    subs.push(...((data ?? []) as Recipient[]))
+  }
+  const note = checkinReminderNotification()
+  return deliver(db, subs, () => note)
 }
 
 Deno.serve(async (req) => {
@@ -243,6 +271,7 @@ Deno.serve(async (req) => {
     event_id?: unknown
     starts_at?: unknown
     minutes?: unknown
+    user_ids?: unknown
   }
   try {
     body = (await req.json()) as typeof body
@@ -252,6 +281,11 @@ Deno.serve(async (req) => {
 
   const db = adminClient()
   try {
+    if (body.event === 'checkin_reminder') {
+      const ids = Array.isArray(body.user_ids) ? body.user_ids.map(String).filter((id) => UUID.test(id)) : []
+      if (ids.length === 0 || ids.length > 10_000) return respond(400, { error: 'Bad user_ids' })
+      return respond(200, await checkinReminders(db, ids))
+    }
     if (body.event === 'calendar_reminder') {
       const eventId = String(body.event_id ?? '')
       const minutes = Number(body.minutes)

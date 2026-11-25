@@ -44,6 +44,26 @@ someone they blocked. Signing out turns notifications off on that device.
 5. The service worker (`public/push-sw.js`) shows the notification and sets
    the app-icon badge. Tapping it opens the Group tab.
 
+### Daily check-in reminders
+
+People choose a reminder time at sign-up or in Settings → Notifications.
+
+- **iPhone and Android apps:** the app schedules them on the phone (local
+  notifications, `src/lib/reminders.ts`), so they work offline.
+- **Everywhere else** (browsers and the Home Screen app on iPhone): the
+  database sends them. Every minute, the pg_cron job `checkin-reminders` runs
+  `public.checkin_send_due_reminders()`. It finds people whose reminder time
+  came in the last 10 minutes _in their own time zone_, who have reminders on
+  and a web device registered, and who haven't checked in that day. It logs
+  each one in `checkin_reminder_log` (one reminder per person per day) and
+  asks `notify-group` to send a push to their web devices.
+- The app saves each person's time zone (`profiles.timezone`) at sign-up and
+  whenever it changes (travel, daylight saving is handled by the zone).
+- Keeping reminders on at sign-up asks to allow notifications. Settings shows
+  whether this device will get them, and what's missing if not.
+- The text is discreet and changes daily ("Pause and check your heart.",
+  "You are not alone.", …). Tapping it opens the check-in.
+
 ### Live configuration (already done)
 
 | Where                               | Name                                      | What                                           |

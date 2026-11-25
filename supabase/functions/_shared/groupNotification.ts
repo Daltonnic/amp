@@ -124,3 +124,26 @@ export function eventReminderNotification(n: {
         discreet: true,
       }
 }
+
+/**
+ * The daily check-in reminder. Lock-screen text stays discreet (no mention of
+ * addiction or recovery), and matches the reminders the phone apps schedule.
+ */
+export const CHECKIN_REMINDERS = [
+  'Pause and check your heart.',
+  'Take a moment to breathe.',
+  'You are not alone.',
+  'How are you, really? Take a moment to check in.',
+  'One day at a time. One step at a time.',
+] as const
+
+export function checkinReminderNotification(now: Date = new Date()): GroupNotification {
+  const day = Math.floor(now.getTime() / 86_400_000)
+  return {
+    title: 'AMP',
+    body: CHECKIN_REMINDERS[day % CHECKIN_REMINDERS.length]!,
+    url: '/check-in',
+    tag: 'amp-checkin',
+    discreet: true,
+  }
+}

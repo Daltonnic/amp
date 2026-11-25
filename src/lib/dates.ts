@@ -21,3 +21,12 @@ export function greeting(now: Date = new Date()): string {
 export function dailyPick<T>(items: readonly T[], seed: number): T {
   return items[seed % items.length] as T
 }
+
+/** This device's time zone ("America/Chicago"), or null if the browser won't say. */
+export function currentTimeZone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null
+  } catch {
+    return null
+  }
+}

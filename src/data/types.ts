@@ -33,6 +33,8 @@ export interface Profile {
   daily_reminders: boolean
   /** "HH:MM" (Postgres returns "HH:MM:SS"; both are accepted). */
   reminder_time: string
+  /** IANA time zone ("America/Chicago"), kept current by the app, so reminders come at local time. */
+  timezone: string | null
   onboarding_complete: boolean
   created_at: string
   updated_at: string

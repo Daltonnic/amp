@@ -11,7 +11,7 @@ import { paths } from '@/app/routes'
  * which is this page: https://<your-domain>/privacy
  */
 
-const UPDATED = 'November 24, 2026'
+const UPDATED = 'November 25, 2026'
 
 function H({ children }: { children: ReactNode }) {
   return <h2 className="mb-2 mt-6 font-display text-lg font-semibold text-foreground">{children}</h2>
@@ -70,7 +70,7 @@ export default function Privacy() {
           </p>
           <p>
             Some settings stay only on your device: your app PIN (stored as a one-way hash, never sent to us),
-            reminder schedule, theme, and unsaved journal drafts.
+            theme, and unsaved journal drafts.
           </p>
 
           <H>Your group</H>
@@ -123,6 +123,13 @@ export default function Privacy() {
             message or meeting name only if you turn on "Show details". The content is encrypted on its way to
             your device. Turn notifications off in Settings at any time; signing out or deleting your account
             removes your device address.
+          </p>
+          <p>
+            Daily check-in reminders: we store whether you want them, the time you chose, and your time zone,
+            so the reminder arrives at that time where you are. In the web app we send it as a notification
+            only on days you haven't checked in yet, and keep a note that we sent it for 7 days so you're
+            never reminded twice in a day. In the iPhone and Android apps, reminders are scheduled on your
+            phone instead. The reminder never says what AMP is for.
           </p>
           <p>
             The Notifications screen in the app (the bell on Home) lists replies to you, news about joining

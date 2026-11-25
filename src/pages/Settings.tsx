@@ -66,7 +66,7 @@ import {
 import { useAuth } from '@/lib/auth'
 import { config, isCloudConfigured } from '@/lib/config'
 import { hapticSuccess, isNative } from '@/lib/native'
-import { clearReminders, remindersSupported, syncReminders } from '@/lib/reminders'
+import { clearReminders, reminderChannel, syncReminders } from '@/lib/reminders'
 import { useTheme, type ThemePreference } from '@/lib/theme'
 import { errorMessage } from '@/lib/utils'
 
@@ -193,8 +193,8 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
         <Row title="Daily Reminders" subtitle="Gentle nudges to check in">
           <Switch checked={reminders} onCheckedChange={setReminders} aria-label="Daily reminders" />
         </Row>
-        {reminders &&
-          (remindersSupported ? (
+        {reminders && (
+          <>
             <Row title="Reminder time">
               <input
                 type="time"
@@ -204,12 +204,9 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
                 className="min-h-11 rounded-md border border-input bg-card px-3"
               />
             </Row>
-          ) : (
-            <p className="flex items-start gap-2 text-xs text-muted-foreground">
-              <Smartphone className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              Reminders are delivered by the iPhone and Android apps.
-            </p>
-          ))}
+            <ReminderNote />
+          </>
+        )}
       </Section>
 
       {!nameOk && (
@@ -259,6 +256,29 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
 }
 
 /** Push notifications for this device: on/off, and whether to show message text. */
+/** How reminders reach this device, and what's missing if they can't yet. */
+function ReminderNote() {
+  const push = usePush()
+  const channel = reminderChannel()
+  if (channel === 'device') return null
+  const text =
+    channel === 'push'
+      ? push.state === 'on'
+        ? 'Sent to this device at that time, only on days you haven’t checked in yet.'
+        : push.state === 'blocked'
+          ? 'Notifications are blocked for AMP on this device. Allow them in your browser or phone settings to get reminders.'
+          : 'Turn on push notifications above to get reminders on this device.'
+      : channel === 'install'
+        ? 'On iPhone, add AMP to your Home Screen and turn on push notifications to get reminders.'
+        : 'This browser can’t show notifications. The iPhone and Android apps can.'
+  return (
+    <p className="flex items-start gap-2 text-xs text-muted-foreground" aria-live="polite">
+      <Smartphone className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+      {text}
+    </p>
+  )
+}
+
 function PushSettings() {
   const push = usePush()
   const toggle = (on: boolean) => {

@@ -23,7 +23,13 @@ function watchErrors(page: Page) {
 /** The faded photo behind the current screen. */
 const background = (page: Page) => page.locator('img[src^="/backgrounds/"]')
 
-async function onboard(page: Page, track: 'men' | 'spouse', gender: 'man' | 'woman' = 'man') {
+async function onboard(
+  page: Page,
+  track: 'men' | 'spouse',
+  gender: 'man' | 'woman' = 'man',
+  /** Runs on the reminders step, before "Begin The Journey". */
+  atReminders?: (page: Page) => Promise<void>,
+) {
   await page.goto('/')
   await expect(page).toHaveURL(/\/welcome$/)
   await expect(page.getByRole('heading', { name: 'Welcome to The Journey' })).toBeVisible()
@@ -71,6 +77,7 @@ async function onboard(page: Page, track: 'men' | 'spouse', gender: 'man' | 'wom
   await cont.click()
 
   await expect(page.getByRole('heading', { name: 'Daily Reminders' })).toBeVisible()
+  await atReminders?.(page)
   await page.getByRole('button', { name: 'Begin The Journey' }).click()
   await expect(page).toHaveURL(/\/home$/)
   await expect(page.getByRole('heading', { name: 'The Journey' })).toBeVisible()
@@ -583,7 +590,10 @@ test('notifications: one-tap button on Home, toggles in Settings', async ({ page
     })
   })
   const errors = watchErrors(page)
-  await onboard(page, 'men', 'man')
+  // Keeping daily reminders on would turn notifications on during sign-up.
+  await onboard(page, 'men', 'man', (p) =>
+    p.getByRole('switch', { name: 'Daily check-in reminders' }).click(),
+  )
 
   const card = page.getByRole('heading', { name: 'Get notified about your group' })
   await expect(card).toBeVisible()
@@ -996,6 +1006,55 @@ test('notifications: bell on Home, the list, opening, removing and reading', asy
   await page.evaluate(() => localStorage.setItem('amp.device.notifications', '[]'))
   await page.goto('/notifications')
   await expect(page.getByText('You’re all caught up')).toBeVisible()
+  expect(errors).toEqual([])
+})
+
+test('daily check-in reminders: chosen at sign-up, sent as push notifications', async ({ page }) => {
+  // Stand-in for the browser's push service, kept across page loads.
+  await page.addInitScript(() => {
+    const key = 'amp.fakePush'
+    const state = JSON.parse(
+      sessionStorage.getItem(key) ?? '{"permission":"default","subscribed":false,"preview":false}',
+    )
+    ;(window as Window & { __ampFakePush?: unknown }).__ampFakePush = new Proxy(state, {
+      set(target, prop, value) {
+        target[prop] = value
+        sessionStorage.setItem(key, JSON.stringify(target))
+        return true
+      },
+    })
+  })
+  const errors = watchErrors(page)
+  await onboard(page, 'men', 'man', async (p) => {
+    await expect(p.getByRole('switch', { name: 'Daily check-in reminders' })).toBeChecked()
+    await p.getByLabel('Remind me at').fill('07:30')
+    await expect(p.getByText(/only be reminded on days you haven’t checked in yet/)).toBeVisible()
+  })
+
+  // Keeping reminders on turned notifications on, and the time zone was saved.
+  const fake = () => page.evaluate(() => JSON.parse(sessionStorage.getItem('amp.fakePush') ?? '{}'))
+  expect((await fake()).subscribed).toBe(true)
+  const profile = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('amp.device.profiles') ?? '[]')[0],
+  )
+  expect(profile.reminder_time.slice(0, 5)).toBe('07:30')
+  expect(profile.timezone).toBe('America/Chicago')
+
+  // Settings shows the time on the web too, and how reminders arrive.
+  await page.goto('/settings')
+  await expect(page.getByLabel('Reminder time')).toHaveValue('07:30')
+  await expect(
+    page.getByText('Sent to this device at that time, only on days you haven’t checked in yet.'),
+  ).toBeVisible()
+  await page.getByRole('switch', { name: 'Push notifications' }).click()
+  await expect(
+    page.getByText('Turn on push notifications above to get reminders on this device.'),
+  ).toBeVisible()
+  await page.getByLabel('Reminder time').fill('21:15')
+  await page.getByRole('button', { name: 'Save Settings' }).click()
+  await expect(page.getByText('Settings saved.')).toBeVisible()
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('amp.device.profiles') ?? '[]')[0])
+  expect(saved.reminder_time.slice(0, 5)).toBe('21:15')
   expect(errors).toEqual([])
 })
 

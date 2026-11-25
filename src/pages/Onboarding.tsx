@@ -16,7 +16,9 @@ import { GENDER_OPTIONS } from '@/lib/audience'
 import { isNameComplete, type NameParts } from '@/lib/names'
 import { NameFields, profileNamePatch } from '@/components/NameFields'
 import { hapticSuccess } from '@/lib/native'
-import { remindersSupported, syncReminders } from '@/lib/reminders'
+import { currentTimeZone } from '@/lib/dates'
+import { enablePush, requestPushPermission } from '@/lib/push'
+import { reminderChannel, remindersSupported, syncReminders } from '@/lib/reminders'
 import { errorMessage } from '@/lib/utils'
 
 const DEFAULT_REMINDER_TIME = '20:00'
@@ -58,8 +60,14 @@ export default function Onboarding() {
               ? needs.length > 0
               : true
 
+  const channel = reminderChannel()
+
   const finish = async () => {
     if (!track || !gender || !isNameComplete(name)) return
+    // Ask to allow notifications now, while the tap counts (browsers only
+    // show the prompt in response to one).
+    const wantPush = reminders && channel === 'push'
+    const permission = wantPush ? requestPushPermission() : undefined
     try {
       await createProfile.mutateAsync({
         track,
@@ -72,12 +80,17 @@ export default function Onboarding() {
         freedom_hidden: false,
         daily_reminders: reminders,
         reminder_time: reminderTime,
+        timezone: currentTimeZone(),
         onboarding_complete: true,
       })
       hapticSuccess()
       if (reminders && remindersSupported) {
         const result = await syncReminders(true, reminderTime)
         if (result === 'denied') toast('Reminders are off. You can allow notifications in Settings anytime.')
+      }
+      if (wantPush) {
+        const state = await enablePush({}, permission).catch(() => 'off' as const)
+        if (state !== 'on') toast('Reminders need notifications. You can turn them on in Settings anytime.')
       }
       navigate(paths.home, { replace: true })
     } catch (err) {
@@ -236,7 +249,7 @@ export default function Onboarding() {
                       aria-label="Daily check-in reminders"
                     />
                   </Card>
-                  {reminders && remindersSupported && (
+                  {reminders && (
                     <Card className="flex items-center justify-between gap-4 p-4">
                       <label htmlFor="reminder-time" className="font-medium text-foreground">
                         Remind me at
@@ -258,10 +271,13 @@ export default function Onboarding() {
                       </p>
                     ))}
                   </div>
-                  {!remindersSupported && (
+                  {reminders && channel !== 'device' && (
                     <p className="text-xs text-muted-foreground">
-                      Reminders are delivered by the iPhone and Android apps. Your preference is saved for
-                      when you install them.
+                      {channel === 'push'
+                        ? 'You’ll only be reminded on days you haven’t checked in yet. Next, your browser will ask to allow notifications.'
+                        : channel === 'install'
+                          ? 'On iPhone, add AMP to your Home Screen (tap Share, then Add to Home Screen) and turn on notifications in Settings to get reminders.'
+                          : 'This browser can’t show notifications. The iPhone and Android apps can, and your choice is saved.'}
                     </p>
                   )}
                 </div>

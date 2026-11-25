@@ -1,12 +1,15 @@
 import { LocalNotifications, Weekday } from '@capacitor/local-notifications'
 import { isNative } from './native'
+import { pushSupport } from './push'
 
 /**
- * Daily check-in reminders, scheduled on the device. The original app only
- * stored a "daily reminders" preference; this actually delivers them.
+ * Daily check-in reminders. The original app only stored a "daily
+ * reminders" preference; this actually delivers them.
  *
- * Reminders are local notifications, so they work offline and send nothing
- * to a server. On the web (PWA) they are not available.
+ * In the iPhone and Android apps, reminders are local notifications, so
+ * they work offline. Everywhere else (the web app, including the Home Screen
+ * app on iPhone) the server sends them as push notifications, only on days
+ * you haven't checked in yet (supabase/migrations/*_checkin_reminders.sql).
  */
 
 // Lock-screen text stays discreet: no mention of addiction or recovery.
@@ -32,6 +35,19 @@ const WEEKDAYS = [
 const BASE_ID = 7100
 
 export const remindersSupported = isNative
+
+/**
+ * How this device gets reminders: scheduled on the device (phone apps), as
+ * push notifications (needs notifications turned on), not until AMP is on the
+ * Home Screen (iPhone browser), or not at all (browsers without push).
+ */
+export type ReminderChannel = 'device' | 'push' | 'install' | 'none'
+
+export function reminderChannel(): ReminderChannel {
+  if (remindersSupported) return 'device'
+  const support = pushSupport()
+  return support === 'web' ? 'push' : support === 'ios-browser' ? 'install' : 'none'
+}
 
 export type ReminderResult = 'scheduled' | 'denied' | 'unsupported' | 'cleared'
 

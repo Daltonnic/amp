@@ -8,8 +8,10 @@ import { PageBackground } from '@/components/PageBackground'
 import { TabBar } from '@/components/TabBar'
 import { useGroupLive, useGroupStatus, useMyRoom } from '@/data/groupQueries'
 import { useNotificationsLive } from '@/data/notificationQueries'
-import { useProfile } from '@/data/queries'
+import { useProfile, useUpdateProfile } from '@/data/queries'
+import type { Profile } from '@/data/types'
 import { useAuth } from '@/lib/auth'
+import { currentTimeZone } from '@/lib/dates'
 import { useKeyboardOpen } from '@/lib/keyboard'
 import { isNative, platform } from '@/lib/native'
 import { handleNotificationTaps, syncPush } from '@/lib/push'
@@ -69,6 +71,7 @@ export function TabsLayout() {
   const profile = useProfile()
   const online = useOnline()
   const keyboardOpen = useKeyboardOpen()
+  useKeepTimeZone(profile.data ?? null)
 
   if (profile.isPending) return <FullScreenSpinner />
   if (profile.isError) return <LoadError onRetry={() => void profile.refetch()} />
@@ -124,6 +127,20 @@ function GroupLive() {
   const status = useGroupStatus(room)
   useGroupLive(room, Boolean(status.data?.member))
   return null
+}
+
+/**
+ * Saves this device's time zone on the profile when it changes (first use,
+ * travel), so daily reminders arrive at the chosen local time.
+ */
+function useKeepTimeZone(profile: Profile | null) {
+  const { mutate: save } = useUpdateProfile()
+  const id = profile?.id
+  const saved = profile?.timezone
+  useEffect(() => {
+    const zone = currentTimeZone()
+    if (id && zone && saved !== zone) save({ id, patch: { timezone: zone } })
+  }, [id, saved, save])
 }
 
 /** Keeps notifications (and the bell's count) current while the app is open. */

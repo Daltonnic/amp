@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CHECKIN_REMINDERS,
+  checkinReminderNotification,
   eventReminderNotification,
   groupNotification,
   startsIn,
@@ -109,5 +111,16 @@ describe('meeting reminders', () => {
         startsAt: '2026-12-02T01:00:00+00:00',
       }).url,
     ).toBe(`/calendar?event=e1&at=${Date.UTC(2026, 11, 2, 1)}`)
+  })
+})
+
+describe('daily check-in reminders', () => {
+  it('is discreet, opens the check-in, and changes from day to day', () => {
+    const today = checkinReminderNotification(new Date('2026-11-25T02:00:00Z'))
+    expect(today).toMatchObject({ title: 'AMP', url: '/check-in', tag: 'amp-checkin', discreet: true })
+    expect(CHECKIN_REMINDERS).toContain(today.body)
+    const tomorrow = checkinReminderNotification(new Date('2026-11-26T02:00:00Z'))
+    expect(tomorrow.body).not.toBe(today.body)
+    for (const line of CHECKIN_REMINDERS) expect(line).not.toMatch(/addict|recover|porn|sex|purity|betray/i)
   })
 })
