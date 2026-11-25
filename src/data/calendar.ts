@@ -59,7 +59,7 @@ export function createSupabaseCalendar(sb: SupabaseClient): CalendarApi {
     },
     async create(input) {
       const { data, error } = await sb.from('calendar_events').insert(input).select().single()
-      if (error?.code === '42501') throw new Error('Only leaders can add events.')
+      if (error?.code === '42501') throw new Error('Only moderators can add events.')
       fail(error)
       return data as CalendarEvent
     },

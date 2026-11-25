@@ -34,7 +34,7 @@ do $$ begin
     raise exception 'leader should have 3 join requests, has %', pg_temp.count_for('c0000000-0000-4000-8000-000000000007', 'join_request');
   end if;
   if not exists (select 1 from public.notifications where user_id = 'c0000000-0000-4000-8000-000000000007'
-                 and title = 'Eve asked to join' and body = 'Women in Recovery' and url = '/leaders') then
+                 and title = 'Eve asked to join' and body = 'Women in Recovery' and url = '/moderators') then
     raise exception 'join request wording';
   end if;
 end $$;
@@ -146,6 +146,10 @@ reset role;
 do $$ begin
   if pg_temp.count_for('d0000000-0000-4000-8000-000000000001', 'leader') <> 1 then
     raise exception 'new leader not told';
+  end if;
+  if not exists (select 1 from public.notifications where user_id = 'd0000000-0000-4000-8000-000000000001'
+                 and kind = 'leader' and title = 'You''re now a moderator' and url = '/moderators') then
+    raise exception 'new moderator wording';
   end if;
   if pg_temp.count_for('d0000000-0000-4000-8000-000000000001', 'join_request') <> 1 then
     raise exception 'new leader should see the waiting request';

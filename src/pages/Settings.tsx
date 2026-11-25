@@ -168,7 +168,7 @@ function SettingsForm({ profile: p }: { profile: Profile }) {
         </div>
         <Row title="Track" subtitle={trackLabel(p.track, gender)} />
         {isLeader && (
-          <Row title="Role" subtitle="You can approve members and choose leaders (More → Leaders)">
+          <Row title="Role" subtitle="You can approve members and choose moderators (More → Moderators)">
             <LeaderBadge />
           </Row>
         )}

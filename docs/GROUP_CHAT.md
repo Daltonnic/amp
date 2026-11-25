@@ -53,36 +53,39 @@ The name shown in the group is worked out on the server from the profile
 (`public.public_name()`), so nobody can post under a name they didn't choose,
 and a name change updates every message straight away.
 
-## Leaders
+## Moderators
 
-Leaders run the groups. They show in **gold** everywhere: a gold ring around
-their initials, a **Leader** tag next to their name, and a soft gold message
-bubble. Leaders have a **Leaders** page (More → Leaders) where they:
+Moderators are marked with a yellow shield. In the code and database they're
+called leaders (the `leaders` table, `is_leader()`), the name they had first.
+
+Moderators run the groups. They show in **gold** everywhere: a gold ring around
+their initials, a **Moderator** tag with a yellow shield next to their name, and a soft gold message
+bubble. Moderators have a **Moderators** page (More → Moderators) where they:
 
 - **Approve or decline requests** to join any of the four groups. Everyone who
-  isn't a leader asks to join and waits; leaders get a notification when
-  someone asks, and the person gets one when they're approved. Leaders see only the
+  isn't a moderator asks to join and waits; moderators get a notification when
+  someone asks, and the person gets one when they're approved. Moderators see only the
   name each person chose to show their group, their group and when they signed
   up, never their email or real first and last name (enforced in the database
   by `public.leader_people()`). A declined person can ask
   again.
 - **See everyone** with an account and whether they're in a group.
-- **Make other people leaders**, or step someone down. There's always at least
-  one leader.
+- **Make other people moderators**, or step someone down. There's always at least
+  one moderator.
 
-In the group they belong to, leaders also moderate: a **Reports** button in the
+In the group they belong to, moderators also moderate: a **Reports** button in the
 group header, deleting any message, and removing people (who then can't see
-the group or rejoin it). Leaders can't be removed from a group; step them down
-first. Each group stays private: leaders only read the group they're in, so
-the women's groups need a woman leader to review their reports. Approving join
+the group or rejoin it). Moderators can't be removed from a group; step them down
+first. Each group stays private: moderators only read the group they're in, so
+the women's groups need a woman moderator to review their reports. Approving join
 requests works for every group.
 
-Leaders join their own group without waiting. People who were in a group
+Moderators join their own group without waiting. People who were in a group
 before approvals existed stayed in it. Changing man/woman or track moves
 someone out of their group, and joining the new one needs approval.
 
-The first leaders were set with SQL. To add one that way (for example if every
-leader stepped away), in the Supabase dashboard → **SQL Editor**:
+The first moderators were set with SQL. To add one that way (for example if every
+moderator stepped away), in the Supabase dashboard → **SQL Editor**:
 
 ```sql
 insert into public.leaders (user_id)
@@ -102,8 +105,8 @@ Apple (App Review Guideline 1.2) and Google Play require apps with
 user-generated content to have: agreement to terms before posting, a way to
 report content, a way to block people, and moderation that acts on reports.
 All of these are built in: the guidelines must be accepted before joining,
-and reporting, blocking, leaders who moderate, approval of new members and
-auto-hiding after three reports are all included. Keep at least one leader in
+and reporting, blocking, moderators who moderate, approval of new members and
+auto-hiding after three reports are all included. Keep at least one moderator in
 each group before launch, and put a contact email in the privacy policy
 (`VITE_SUPPORT_EMAIL`).
 
@@ -118,7 +121,7 @@ Other safeguards:
 - Deleting an account deletes every message that person posted.
 
 **Man or woman is self-reported.** Someone could change it in Settings, but
-that takes them out of their group, and a leader has to approve them into the
+that takes them out of their group, and a moderator has to approve them into the
 new one.
 
 ## Not included yet

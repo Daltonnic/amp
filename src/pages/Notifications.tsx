@@ -4,11 +4,11 @@ import {
   Bell,
   CalendarClock,
   ChevronRight,
-  Crown,
   Info,
   MessageCircle,
   MessagesSquare,
   PartyPopper,
+  Shield,
   UserCheck,
   UserPlus,
   X,
@@ -37,7 +37,7 @@ const LOOK: Record<NotificationKind, { icon: LucideIcon; tone: string }> = {
   join_handled: { icon: UserCheck, tone: 'bg-muted text-muted-foreground' },
   join_approved: { icon: PartyPopper, tone: 'bg-primary/10 text-primary' },
   join_declined: { icon: Info, tone: 'bg-muted text-muted-foreground' },
-  leader: { icon: Crown, tone: 'bg-leader-soft text-leader' },
+  leader: { icon: Shield, tone: 'bg-leader-soft text-leader [&>svg]:fill-moderator-shield' },
   meeting: { icon: CalendarClock, tone: 'bg-primary/10 text-primary' },
 }
 

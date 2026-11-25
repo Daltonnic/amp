@@ -86,14 +86,14 @@ export default function Privacy() {
               in the app.
             </li>
             <li>
-              Ministry leaders approve each new member. To do that, leaders can see the name you chose to show
+              Moderators approve each new member. To do that, moderators can see the name you chose to show
               your group, which group you belong to, and whether you've asked to join. They never see your
-              email or your real first and last name (unless that's the name you chose to show). Leaders can
-              only read the messages of the group they're in.
+              email or your real first and last name (unless that's the name you chose to show). Moderators
+              can only read the messages of the group they're in.
             </li>
             <li>
-              Leaders in your group can remove messages and remove people who break the group guidelines. When
-              you report a message, they see the message and your reason, but not who reported it.
+              Moderators in your group can remove messages and remove people who break the group guidelines.
+              When you report a message, they see the message and your reason, but not who reported it.
             </li>
             <li>
               Blocking someone hides their messages from you; they are not told. You can unblock them in
@@ -108,10 +108,10 @@ export default function Privacy() {
 
           <H>Calendar</H>
           <p>
-            Leaders post meetings and events for each group. You see the calendar for your group, and leaders
-            see all of them. Events are visible to everyone in the groups they're posted to. If you say you're
-            going (or can't make it), others see only how many are going; leaders also see the name you chose
-            to show.
+            Moderators post meetings and events for each group. You see the calendar for your group, and
+            moderators see all of them. Events are visible to everyone in the groups they're posted to. If you
+            say you're going (or can't make it), others see only how many are going; moderators also see the
+            name you chose to show.
           </p>
 
           <H>Notifications</H>
@@ -126,7 +126,7 @@ export default function Privacy() {
           </p>
           <p>
             The Notifications screen in the app (the bell on Home) lists replies to you, news about joining
-            your group, becoming a leader, and meeting reminders, whether or not push notifications are on.
+            your group, becoming a moderator, and meeting reminders, whether or not push notifications are on.
             Only you can see your list. You can remove items from it at any time, and they're deleted
             automatically after 90 days or when the message or meeting they're about is deleted.
           </p>

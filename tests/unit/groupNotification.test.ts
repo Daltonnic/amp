@@ -48,12 +48,12 @@ describe('group notification wording', () => {
   })
 })
 
-describe('leader and welcome notifications', () => {
-  it('tells leaders about a request without names unless they chose previews', () => {
+describe('moderator and welcome notifications', () => {
+  it('tells moderators about a request without names unless they chose previews', () => {
     const quiet = joinRequestNotification({ name: 'Ben T.', roomName: 'Men in Recovery', preview: false })
     expect(quiet.body).toBe('Someone asked to join a group')
     expect(JSON.stringify(quiet)).not.toMatch(/Ben|Recovery/)
-    expect(quiet.url).toBe('/leaders')
+    expect(quiet.url).toBe('/moderators')
     const full = joinRequestNotification({ name: 'Ben T.', roomName: 'Men in Recovery', preview: true })
     expect(full.body).toBe('Ben T. asked to join Men in Recovery.')
   })
@@ -63,6 +63,9 @@ describe('leader and welcome notifications', () => {
     expect(quiet.title).toBe('AMP')
     expect(JSON.stringify(quiet)).not.toMatch(/Women/)
     expect(quiet.url).toBe('/group')
+    expect(welcomeNotification({ roomName: 'Women in Recovery', preview: true }).body).toBe(
+      'A moderator approved your request. Welcome to the group!',
+    )
   })
 })
 

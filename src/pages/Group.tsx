@@ -96,8 +96,8 @@ function Waiting({ roomName }: { roomName: string }) {
         </span>
         <h1 className="font-display text-lg font-semibold">Your request has been sent</h1>
         <p className="text-sm text-muted-foreground">
-          A leader will welcome you into {roomName} soon. Every new member is approved by a leader to keep the
-          group safe.
+          A moderator will welcome you into {roomName} soon. Every new member is approved by a moderator to
+          keep the group safe.
         </p>
       </Card>
       <Link
@@ -108,7 +108,7 @@ function Waiting({ roomName }: { roomName: string }) {
       </Link>
       <NotificationsPrompt
         title="Know the moment you're in"
-        description="Turn on notifications and we'll tell you when a leader approves you, even if AMP is closed."
+        description="Turn on notifications and we'll tell you when a moderator approves you, even if AMP is closed."
         force
       />
     </div>
@@ -123,8 +123,8 @@ function Declined({ room }: { room: NonNullable<ReturnType<typeof useMyRoom>> })
       <Card className="flex flex-col items-center gap-3 p-8 text-center">
         <h1 className="font-display text-lg font-semibold">Your request wasn't approved</h1>
         <p className="text-sm text-muted-foreground">
-          A leader wasn't able to approve your request to join {GROUP_ROOMS[room].name}. If you think this was
-          a mistake, talk with your pastor or a ministry leader, then ask again.
+          A moderator wasn't able to approve your request to join {GROUP_ROOMS[room].name}. If you think this
+          was a mistake, talk with your pastor or a ministry leader, then ask again.
         </p>
         <Button
           variant="outline"

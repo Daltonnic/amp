@@ -32,6 +32,7 @@
   --leader: 41 82% 38%;
   --leader-foreground: 0 0% 100%;
   --leader-soft: 44 90% 94%;
+  --moderator-shield: 45 93% 50%;
   --border: 222 20% 88%;
   --input: 222 20% 84%;
   --ring: 20 67% 50%;
@@ -65,6 +66,7 @@
   --leader: 43 85% 58%;
   --leader-foreground: 30 40% 10%;
   --leader-soft: 40 45% 17%;
+  --moderator-shield: 48 96% 55%;
   --border: 222 30% 20%;
   --input: 222 30% 24%;
   --ring: 20 67% 52%;
@@ -94,6 +96,7 @@
   --color-leader: hsl(var(--leader));
   --color-leader-foreground: hsl(var(--leader-foreground));
   --color-leader-soft: hsl(var(--leader-soft));
+  --color-moderator-shield: hsl(var(--moderator-shield));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));

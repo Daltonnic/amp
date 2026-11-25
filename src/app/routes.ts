@@ -14,7 +14,7 @@ export const paths = {
   identity: '/identity',
   accountability: '/accountability',
   settings: '/settings',
-  leaders: '/leaders',
+  moderators: '/moderators',
   notifications: '/notifications',
   privacy: '/privacy',
 } as const
@@ -25,4 +25,6 @@ export const legacyRedirects: Record<string, string> = {
   '/CheckIn': paths.checkIn,
   '/TriggerAwareness': paths.triggers,
   '/IdentityFormation': paths.identity,
+  // Moderators used to be called leaders.
+  '/leaders': paths.moderators,
 }

@@ -1,9 +1,9 @@
 # Calendar
 
-Each of the four groups has its own meeting calendar. Only **leaders** add,
+Each of the four groups has its own meeting calendar. Only **moderators** add,
 edit and delete events. Everyone sees the events for their own group (from
 their profile: man or woman, recovery or betrayed spouse), whether or not
-they've joined the group chat. Leaders see every group's events.
+they've joined the group chat. Moderators see every group's events.
 
 People find it:
 
@@ -20,13 +20,13 @@ repeats, where (web links are tappable), details and reminders, and offers
 ## RSVP
 
 Each meeting date has **Going** and **Can't make it** (tap again to clear).
-Everyone sees how many are going; leaders also see who, by the name each
+Everyone sees how many are going; moderators also see who, by the name each
 person chose to show. Someone who can't make it isn't sent reminders for that
 date (they still get them for later dates of a repeating meeting). Answers
 are per date and stored in `calendar_rsvps`; `calendar_rsvp()` only accepts a
 real, upcoming date of a meeting the person can see.
 
-## Adding an event (leaders)
+## Adding an event (moderators)
 
 Calendar → **Add event**:
 
@@ -34,7 +34,7 @@ Calendar → **Add event**:
 | ---------- | -------------------------------------------------------------------------------------------------------------- |
 | Title      | Required                                                                                                       |
 | Groups     | One or more of the four groups (your own group is preselected; "All groups" picks all)                         |
-| Date, time | In the leader's time zone. Everyone sees it in their own time zone                                             |
+| Date, time | In the moderator's time zone. Everyone sees it in their own time zone                                          |
 | How long   | 30 minutes to 4 hours                                                                                          |
 | How often  | Once, every day, every week, every 2 weeks, every month; optional "repeat until"                               |
 | Where      | Optional: an address/room, or an `https://` video link                                                         |
@@ -55,7 +55,7 @@ Reminders are discreet by default ("A meeting starts in 1 hour"); with
 **Show details** on in Settings they show the meeting's name.
 
 Weekly meetings stay at the same local time across daylight-saving changes:
-events are stored as the wall-clock time in the leader's time zone
+events are stored as the wall-clock time in the moderator's time zone
 (`starts_local` + `timezone`), and `public.calendar_occurrences()` expands the
 repeats in that time zone. `supabase/tests/calendar.sql` covers this, monthly
 meetings on the 31st, "repeat until", permissions, and reminders going out

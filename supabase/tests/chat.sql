@@ -381,7 +381,7 @@ do $$ begin
     perform public.leader_set_leader('c0000000-0000-4000-8000-000000000004', false);
     raise exception 'the last leader stepped down';
   exception when raise_exception then
-    if sqlerrm not like '%at least one leader%' then raise; end if;
+    if sqlerrm not like '%at least one moderator%' then raise; end if;
   end;
   -- Making Joy a leader also lets her into her group.
   perform public.leader_set_leader('c0000000-0000-4000-8000-000000000007', true);

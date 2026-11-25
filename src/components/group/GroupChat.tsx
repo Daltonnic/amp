@@ -410,7 +410,7 @@ const MessageRow = memo(function MessageRow({
       ? 'Hidden after reports'
       : m.deleted_by === m.user_id
         ? 'This message was deleted'
-        : 'Removed by a leader'
+        : 'Removed by a moderator'
 
   return (
     <div

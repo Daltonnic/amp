@@ -7,7 +7,6 @@ import {
   CalendarDays,
   CircleAlert,
   ClipboardCheck,
-  Crown,
   House,
   Library,
   Menu,
@@ -24,6 +23,7 @@ import { DialogDescription, DialogTitle } from '@radix-ui/react-dialog'
 import { useGroupBadge, useIsLeader, useJoinRequestCount } from '@/data/groupQueries'
 import { useUnreadNotificationCount } from '@/data/notificationQueries'
 import { useLibrary } from '@/data/queries'
+import { ModeratorShield } from '@/components/group/Avatar'
 import { hapticTap } from '@/lib/native'
 import { cn } from '@/lib/utils'
 
@@ -63,7 +63,7 @@ export function TabBar() {
   // (App Review rejects placeholder content).
   const hasArticles = (library.data?.length ?? 0) > 0
   const more = [
-    ...(isLeader ? [{ name: 'Leaders', to: paths.leaders, icon: Crown }] : []),
+    ...(isLeader ? [{ name: 'Moderators', to: paths.moderators, icon: Shield }] : []),
     ...MORE.filter((m) => m.to !== paths.library || hasArticles),
   ]
   const inMore = more.some((m) => location.pathname.startsWith(m.to))
@@ -141,17 +141,18 @@ export function TabBar() {
                       )
                     }
                   >
-                    <Icon
-                      className={cn('size-5', to === paths.leaders ? 'text-leader' : 'text-primary')}
-                      aria-hidden="true"
-                    />
+                    {to === paths.moderators ? (
+                      <ModeratorShield className="size-5" />
+                    ) : (
+                      <Icon className="size-5 text-primary" aria-hidden="true" />
+                    )}
                     <span className="flex-1">{name}</span>
                     {to === paths.notifications && newNotifications > 0 && (
                       <span className="rounded-full bg-destructive px-2 text-xs font-semibold leading-5 text-destructive-foreground">
                         {newNotifications > 99 ? '99+' : newNotifications} new
                       </span>
                     )}
-                    {to === paths.leaders && requests > 0 && (
+                    {to === paths.moderators && requests > 0 && (
                       <span className="rounded-full bg-leader px-2 text-xs font-semibold leading-5 text-leader-foreground">
                         {requests} waiting
                       </span>

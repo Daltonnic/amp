@@ -49,7 +49,7 @@ export function groupNotification(n: GroupNotificationInput): GroupNotification 
   }
 }
 
-/** To leaders: someone asked to join a group. */
+/** To moderators: someone asked to join a group. */
 export function joinRequestNotification(n: {
   name: string
   roomName: string
@@ -59,7 +59,7 @@ export function joinRequestNotification(n: {
     ? {
         title: 'New request to join',
         body: `${n.name} asked to join ${n.roomName}.`,
-        url: '/leaders',
+        url: '/moderators',
         tag: 'amp-leaders',
         discreet: false,
         stack: '{n} people are waiting to join a group',
@@ -67,20 +67,20 @@ export function joinRequestNotification(n: {
     : {
         title: 'AMP',
         body: 'Someone asked to join a group',
-        url: '/leaders',
+        url: '/moderators',
         tag: 'amp-leaders',
         discreet: true,
         stack: '{n} people are waiting to join a group',
       }
 }
 
-/** To the person: a leader approved their request. */
+/** To the person: a moderator approved their request. */
 export function welcomeNotification(n: { roomName: string; preview: boolean }): GroupNotification {
   return {
     title: n.preview ? n.roomName : 'AMP',
     body: n.preview
-      ? 'A leader approved your request. Welcome to the group!'
-      : 'You’re in! A leader welcomed you into your group.',
+      ? 'A moderator approved your request. Welcome to the group!'
+      : 'You’re in! A moderator welcomed you into your group.',
     url: '/group',
     tag: 'amp-welcome',
     discreet: !n.preview,

@@ -613,7 +613,7 @@ function EventForm({
           {event ? 'Edit event' : 'Add an event'}
         </DialogTitle>
         <DialogDescription className="px-1 text-sm text-muted-foreground">
-          Only leaders can add events. Everyone in the groups you pick will see it.
+          Only moderators can add events. Everyone in the groups you pick will see it.
         </DialogDescription>
         <form
           className="space-y-5 px-1 py-4"

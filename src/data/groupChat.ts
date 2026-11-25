@@ -476,7 +476,7 @@ export function createDeviceGroupChat(): GroupChatApi {
       throw new Error('There’s nobody else on this device to approve.')
     },
     async setLeader(userId, make) {
-      if (!make && leaderIds().length <= 1) throw new Error('There must always be at least one leader.')
+      if (!make && leaderIds().length <= 1) throw new Error('There must always be at least one moderator.')
       save(
         KEY.leaders,
         make ? [...new Set([...leaderIds(), userId])] : leaderIds().filter((u) => u !== userId),

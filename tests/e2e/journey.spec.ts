@@ -687,33 +687,48 @@ test('freedom counter: start on Home; restart and edit in Settings', async ({ pa
   expect(errors).toEqual([])
 })
 
-test('leaders: page for leaders, and everyone else asks to join', async ({ page }) => {
+test('moderators: page for moderators, and everyone else asks to join', async ({ page }) => {
   const errors = watchErrors(page)
   await onboard(page, 'men', 'man')
 
-  // On this device you're the leader: the Leaders page is in More, in gold.
+  // On this device you're a moderator: the Moderators page is in More, with the yellow shield.
   await page.getByRole('button', { name: 'More sections' }).click()
-  await page.getByRole('link', { name: 'Leaders' }).click()
-  await expect(page.getByRole('heading', { name: 'Leaders', level: 1 })).toBeVisible()
+  await page.getByRole('link', { name: 'Moderators' }).click()
+  await expect(page).toHaveURL(/\/moderators$/)
+  await expect(page.getByRole('heading', { name: 'Moderators', level: 1 })).toBeVisible()
   await page.getByRole('tab', { name: 'Requests' }).click()
   await expect(page.getByText('No one is waiting')).toBeVisible()
   await page.getByRole('tab', { name: 'People' }).click()
-  await expect(page.getByRole('list', { name: 'People' }).getByText('Leader')).toBeVisible()
-  await page.getByRole('tab', { name: 'Leaders' }).click()
-  await expect(page.getByText('There must always be at least one leader.')).toBeVisible()
+  await expect(
+    page.getByRole('list', { name: 'People' }).getByText('Moderator', { exact: true }),
+  ).toBeVisible()
+  // The badge's shield is filled yellow.
+  const fill = await page
+    .getByRole('list', { name: 'People' })
+    .getByText('Moderator', { exact: true })
+    .locator('svg')
+    .evaluate((el) => getComputedStyle(el).fill)
+  expect(fill).toMatch(/^rgb\(2\d\d, 1[6-9]\d, \d{1,2}\)$/)
+  await page.getByRole('tab', { name: 'Moderators' }).click()
+  await expect(page.getByText('There must always be at least one moderator.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Step down' })).toHaveCount(0)
+  await expect(page.getByText(/leader/i)).toHaveCount(0)
 
-  // Someone who isn't a leader: no Leaders page, and joining waits for approval.
+  // Someone who isn't a moderator: no Moderators page (old /leaders links
+  // land on it too), and joining waits for approval.
   await page.evaluate(() => localStorage.setItem('amp.device.leaders', '[]'))
   await page.goto('/leaders')
-  await expect(page.getByText('Leaders only')).toBeVisible()
+  await expect(page).toHaveURL(/\/moderators$/)
+  await expect(page.getByText('Moderators only')).toBeVisible()
   await page.goto('/group')
   await page.getByLabel('First name', { exact: true }).fill('Ben')
+  await expect(page.getByText('a moderator approves each new member')).toBeVisible()
   await page.getByRole('checkbox', { name: 'I agree to follow these guidelines' }).check()
   await page.getByRole('button', { name: 'Ask to join' }).click()
   await expect(page.getByRole('heading', { name: 'Your request has been sent' })).toBeVisible()
+  await expect(page.getByText(/A moderator will welcome you/)).toBeVisible()
   await page.getByRole('button', { name: 'More sections' }).click()
-  await expect(page.getByRole('link', { name: 'Leaders' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Moderators' })).toHaveCount(0)
 
   expect(errors).toEqual([])
 })

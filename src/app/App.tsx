@@ -57,7 +57,7 @@ const router = createBrowserRouter([
           { path: paths.identity, element: <IdentityFormation /> },
           { path: paths.accountability, element: <Accountability /> },
           { path: paths.settings, element: <Settings /> },
-          { path: paths.leaders, element: <Leaders /> },
+          { path: paths.moderators, element: <Leaders /> },
           { path: paths.notifications, element: <Notifications /> },
         ],
       },

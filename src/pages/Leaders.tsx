@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
-import { Check, Crown, Loader2, Search, X } from 'lucide-react'
+import { Check, Loader2, Search, Shield, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { Avatar, LeaderBadge } from '@/components/group/Avatar'
+import { Avatar, LeaderBadge, ModeratorShield } from '@/components/group/Avatar'
 import { Screen } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -60,8 +60,8 @@ export default function Leaders() {
     return (
       <Screen>
         <Card className="p-8 text-center">
-          <h1 className="font-display text-lg font-semibold">Leaders only</h1>
-          <p className="mt-1 text-sm text-muted-foreground">This page is for ministry leaders.</p>
+          <h1 className="font-display text-lg font-semibold">Moderators only</h1>
+          <p className="mt-1 text-sm text-muted-foreground">This page is for moderators.</p>
         </Card>
       </Screen>
     )
@@ -76,11 +76,11 @@ export default function Leaders() {
   return (
     <Screen className="space-y-5">
       <header className="flex items-start gap-3">
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-leader text-leader-foreground">
-          <Crown className="size-6" aria-hidden="true" />
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-leader/30 bg-leader-soft">
+          <ModeratorShield className="size-7" />
         </span>
         <div>
-          <h1 className="font-display text-xl font-semibold text-foreground">Leaders</h1>
+          <h1 className="font-display text-xl font-semibold text-foreground">Moderators</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">Welcome new members and care for the groups.</p>
         </div>
       </header>
@@ -99,7 +99,7 @@ export default function Leaders() {
             People
           </TabsTrigger>
           <TabsTrigger value="leaders" className="flex-1">
-            Leaders
+            Moderators
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -124,9 +124,9 @@ export default function Leaders() {
       )}
 
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Leaders approve new members for every group and can make other people leaders. In the group they
-        belong to, leaders can also remove messages, remove people and review reports. Each group stays
-        private: leaders only read the group they’re in.
+        Moderators approve new members for every group and can make other people moderators. In the group they
+        belong to, moderators can also remove messages, remove people and review reports. Each group stays
+        private: moderators only read the group they’re in.
       </p>
     </Screen>
   )
@@ -138,7 +138,7 @@ function Requests({ requests }: { requests: LeaderPerson[] }) {
       <Card className="p-8 text-center">
         <p className="font-medium text-foreground">No one is waiting</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          New requests show up here, and leaders get a notification when someone asks to join.
+          New requests show up here, and moderators get a notification when someone asks to join.
         </p>
       </Card>
     )
@@ -277,8 +277,8 @@ function PersonRow({ person: p }: { person: LeaderPerson }) {
         (confirm ? (
           <div className="space-y-2 rounded-lg bg-leader-soft p-3">
             <p className="text-sm text-foreground">
-              Make {nameOf(p)} a leader? They’ll be able to approve members, make other leaders, and moderate
-              their group.
+              Make {nameOf(p)} a moderator? They’ll be able to approve members, make other moderators, and
+              moderate their group.
             </p>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setConfirm(false)}>
@@ -293,7 +293,7 @@ function PersonRow({ person: p }: { person: LeaderPerson }) {
                     {
                       onSuccess: () => {
                         hapticSuccess()
-                        toast.success(`${nameOf(p)} is now a leader.`)
+                        toast.success(`${nameOf(p)} is now a moderator.`)
                         setConfirm(false)
                       },
                       onError: (err) => toast.error(errorMessage(err)),
@@ -301,7 +301,7 @@ function PersonRow({ person: p }: { person: LeaderPerson }) {
                   )
                 }
               >
-                <Crown aria-hidden="true" /> Make leader
+                <Shield aria-hidden="true" /> Make moderator
               </Button>
             </div>
           </div>
@@ -312,7 +312,7 @@ function PersonRow({ person: p }: { person: LeaderPerson }) {
             className="border-leader/50 text-leader"
             onClick={() => setConfirm(true)}
           >
-            <Crown aria-hidden="true" /> Make leader
+            <Shield aria-hidden="true" /> Make moderator
           </Button>
         ))}
     </Card>
@@ -325,7 +325,7 @@ function LeaderList({ people }: { people: LeaderPerson[] }) {
   const [confirming, setConfirming] = useState<string | null>(null)
   const onlyOne = people.length <= 1
   return (
-    <ul className="space-y-2" aria-label="Current leaders">
+    <ul className="space-y-2" aria-label="Current moderators">
       {people.map((p) => (
         <li key={p.user_id}>
           <Card className="space-y-3 border-leader/40 bg-leader-soft/60 p-4">
@@ -362,8 +362,8 @@ function LeaderList({ people }: { people: LeaderPerson[] }) {
                         onSuccess: () => {
                           toast.success(
                             p.user_id === me
-                              ? 'You’re no longer a leader.'
-                              : `${nameOf(p)} is no longer a leader.`,
+                              ? 'You’re no longer a moderator.'
+                              : `${nameOf(p)} is no longer a moderator.`,
                           )
                           setConfirming(null)
                         },
@@ -380,7 +380,7 @@ function LeaderList({ people }: { people: LeaderPerson[] }) {
         </li>
       ))}
       {onlyOne && (
-        <p className="px-1 text-xs text-muted-foreground">There must always be at least one leader.</p>
+        <p className="px-1 text-xs text-muted-foreground">There must always be at least one moderator.</p>
       )}
     </ul>
   )

@@ -63,7 +63,7 @@ export function JoinGroup({ room, profile }: { room: GroupRoomId; profile: Profi
       <Card className="flex items-start gap-3 border-primary/15 bg-primary/5 p-4">
         <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
         <p className="text-sm text-foreground/80">
-          Only members of {info.name} can see this group, and a leader approves each new member. What you
+          Only members of {info.name} can see this group, and a moderator approves each new member. What you
           share stays inside it.
         </p>
       </Card>

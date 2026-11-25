@@ -14,26 +14,26 @@ This repository is the rebuild of the Base44 app (`amp-copy-4b2a15f1.base44.app`
 
 Every screen from the Base44 app, with its original wording, Scripture, prayers and prompts carried over verbatim:
 
-| Screen               | Path              | Notes                                                                                                                               |
-| -------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Sign in              | `/sign-in`        | Email + password, create account, forgot password                                                                                   |
-| Reset password       | `/reset-password` | Opened from the reset email; also Settings → Change Password                                                                        |
-| Onboarding           | `/welcome`        | Man or woman, track (recovery / betrayed spouse), reason, needs, reminders                                                          |
-| Home                 | `/home`           | Quick actions (**Help Me Now** lists your support people, each a ready-to-send text), encouragement, weekly insights, Today's Focus |
-| Daily Check-In       | `/check-in`       | 6 steps, different for each track                                                                                                   |
-| Grounding Tools      | `/grounding`      | Breathing, body grounding, 5-4-3-2-1, prayer, truths, Scripture, reassurance (spouse)                                               |
-| Journal              | `/journal`        | Templates, guided prompts, free writing, edit/delete, auto-saved drafts                                                             |
-| Group                | `/group`          | GroupMe-style chat, one of four separate groups per person (see [docs/GROUP_CHAT.md](docs/GROUP_CHAT.md))                           |
-| Resources            | `/resources`      | Men's and spouses' articles                                                                                                         |
-| Library              | `/library`        | Admin-published articles (from the database); appears in the menu once at least one is published                                    |
-| Trigger Awareness    | `/triggers`       | Trigger log, then straight to the grounding tools                                                                                   |
-| Identity & Scripture | `/identity`       | Truths and Scripture meditation                                                                                                     |
-| Accountability       | `/accountability` | Trusted contacts; request a check-in, text, call                                                                                    |
-| Calendar             | `/calendar`       | Each group's meetings; leaders add events with repeats and reminder notifications ([docs/CALENDAR.md](docs/CALENDAR.md))            |
-| Notifications        | `/notifications`  | The bell on Home: replies, join requests and approvals, new leaders, meeting reminders ([docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md)) |
-| Leaders              | `/leaders`        | Leaders only: approve join requests for every group, see everyone, make or step down leaders                                        |
-| Settings             | `/settings`       | Name and how it shows, man/woman, group, reminders, appearance, PIN/Face ID lock, sign out, delete account                          |
-| Privacy Policy       | `/privacy`        | Public page (required by both stores)                                                                                               |
+| Screen               | Path              | Notes                                                                                                                                      |
+| -------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sign in              | `/sign-in`        | Email + password, create account, forgot password                                                                                          |
+| Reset password       | `/reset-password` | Opened from the reset email; also Settings → Change Password                                                                               |
+| Onboarding           | `/welcome`        | Man or woman, track (recovery / betrayed spouse), reason, needs, reminders                                                                 |
+| Home                 | `/home`           | Quick actions (**Help Me Now** lists your support people, each a ready-to-send text), encouragement, weekly insights, Today's Focus        |
+| Daily Check-In       | `/check-in`       | 6 steps, different for each track                                                                                                          |
+| Grounding Tools      | `/grounding`      | Breathing, body grounding, 5-4-3-2-1, prayer, truths, Scripture, reassurance (spouse)                                                      |
+| Journal              | `/journal`        | Templates, guided prompts, free writing, edit/delete, auto-saved drafts                                                                    |
+| Group                | `/group`          | GroupMe-style chat, one of four separate groups per person (see [docs/GROUP_CHAT.md](docs/GROUP_CHAT.md))                                  |
+| Resources            | `/resources`      | Men's and spouses' articles                                                                                                                |
+| Library              | `/library`        | Admin-published articles (from the database); appears in the menu once at least one is published                                           |
+| Trigger Awareness    | `/triggers`       | Trigger log, then straight to the grounding tools                                                                                          |
+| Identity & Scripture | `/identity`       | Truths and Scripture meditation                                                                                                            |
+| Accountability       | `/accountability` | Trusted contacts; request a check-in, text, call                                                                                           |
+| Calendar             | `/calendar`       | Each group's meetings; moderators add events with repeats and reminder notifications ([docs/CALENDAR.md](docs/CALENDAR.md))                |
+| Notifications        | `/notifications`  | The bell on Home: replies, join requests and approvals, new moderators, meeting reminders ([docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md)) |
+| Moderators           | `/moderators`     | Moderators only: approve join requests for every group, see everyone, make or step down moderators                                         |
+| Settings             | `/settings`       | Name and how it shows, man/woman, group, reminders, appearance, PIN/Face ID lock, sign out, delete account                                 |
+| Privacy Policy       | `/privacy`        | Public page (required by both stores)                                                                                                      |
 
 Old Base44 links (`/CheckIn`, `/TriggerAwareness`, `/IdentityFormation`, `/Onboarding`, …) redirect to the new paths.
 
