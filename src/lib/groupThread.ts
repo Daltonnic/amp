@@ -1,4 +1,4 @@
-import { differenceInMinutes, format, isSameDay, isSameYear, isToday, isYesterday } from 'date-fns'
+import { differenceInMinutes, format, isSameDay, isSameYear, subDays } from 'date-fns'
 import type { GroupMessage } from '@/data/types'
 
 export type ThreadItem =
@@ -11,8 +11,8 @@ export type ThreadItem =
 const GROUP_MINUTES = 5
 
 export function dayLabel(date: Date, now = new Date()): string {
-  if (isToday(date)) return 'Today'
-  if (isYesterday(date)) return 'Yesterday'
+  if (isSameDay(date, now)) return 'Today'
+  if (isSameDay(date, subDays(now, 1))) return 'Yesterday'
   return isSameYear(date, now) ? format(date, 'EEEE, MMM d') : format(date, 'MMM d, yyyy')
 }
 

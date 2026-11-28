@@ -1,4 +1,6 @@
 /// <reference types="vitest/config" />
+import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -6,6 +8,12 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 const APP_NAME = 'Apostolic Moral Purity'
+
+/** Changes whenever public/push-sw.js changes, so the service worker updates with it. */
+const pushSwVersion = createHash('sha256')
+  .update(readFileSync(new URL('./public/push-sw.js', import.meta.url)))
+  .digest('hex')
+  .slice(0, 10)
 
 /**
  * Supabase settings may arrive under several names: our own VITE_* names, or
@@ -132,7 +140,8 @@ export default defineConfig(({ mode }) => {
           navigateFallbackDenylist: [/^\/functions\//, /^\/auth\//, /^\/rest\//],
           cleanupOutdatedCaches: true,
           // Push notification handlers (public/push-sw.js).
-          importScripts: ['push-sw.js'],
+          // Versioned, so installed apps pick up changes to it.
+          importScripts: [`push-sw.js?v=${pushSwVersion}`],
           // Personal data (check-ins, journal, etc.) is never cached by the
           // service worker: Supabase requests go straight to the network.
           runtimeCaching: [],

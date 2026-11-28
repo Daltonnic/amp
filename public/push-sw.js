@@ -4,7 +4,7 @@
  * shows notifications even when AMP is closed.
  *
  * Payload (from supabase/functions/_shared/groupNotification.ts):
- *   { title, body, url, tag, discreet }
+ *   { title, body, url, tag, discreet, stack? }
  */
 
 self.addEventListener('push', (event) => {
@@ -21,9 +21,12 @@ self.addEventListener('push', (event) => {
     (async () => {
       let body = data.body || 'New message in your group'
       let count = 1
-      const stack = data.stack || (data.discreet !== false ? '{n} new messages in your group' : '')
+      // Only notifications that ask for it (group messages, join requests)
+      // stack into a count: "3 new messages in your group". Others, like
+      // check-in and meeting reminders, just replace the earlier one with
+      // the same tag.
+      const stack = data.stack || ''
       if (stack) {
-        // Notifications with the same tag stack into one: "3 new messages in your group".
         const existing = await self.registration.getNotifications({ tag })
         count = existing.reduce((n, x) => Math.max(n, (x.data && x.data.count) || 1), 0) + 1
         if (count > 1) body = stack.replace('{n}', String(count))
